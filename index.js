@@ -10,7 +10,7 @@ const dataModel = require('screwdriver-data-model');
  * @param  {Object}            config Base configuration to be merged with Dynamodb config
  */
 function EngineDynamodbStore(config) {
-    this.config = config;
+    this.config = config || {};
     this.client = null;
 }
 
@@ -20,6 +20,7 @@ function EngineDynamodbStore(config) {
  * @param  {Object}  config configuration
  */
 EngineDynamodbStore.prototype.configure = function configure(config) {
+    this.config = config;
     vogels.AWS.config.update(config);
 
     this.client = vogels.define(config.tableName, {
