@@ -1,7 +1,15 @@
 box: node:4
 
 build:
+  services:
+    - id: ryanratcliff/dynamodb
+      tag: latest
+      env:
+        port: 8000
   steps:
+    - script:
+      name: env
+      code: env
     - npm-install
     - npm-test
 

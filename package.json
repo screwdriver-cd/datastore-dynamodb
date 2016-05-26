@@ -37,5 +37,10 @@
     "eslint-plugin-react": "^5.1.1",
     "jenkins-mocha": "^2.6.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "aws-sdk": "^2.3.15",
+    "npdynamodb": "^0.2.11",
+    "screwdriver-data-model": "^1.0.2",
+    "vogels": "^2.2.0"
+  }
 }
