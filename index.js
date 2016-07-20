@@ -1,46 +1,40 @@
 'use strict';
-// const dataModel = require('screwdriver-data-model');
+const Datastore = require('screwdriver-datastore-base');
+const schemas = require('screwdriver-data-schema');
+const vogels = require('vogels');
 
-/**
- * @constructor
- * @method EngineDynamodbStore
- * @param  {Object}            config Base configuration to be merged with Dynamodb config
- */
-function EngineDynamodbStore(config) {
-    this.config = config;
+const DEFAULT_REGION = 'us-west-2';
+// vogels.AWS.config.update({region: "REGION"}); // region must be set
 
-    this.client = null;
+class Dynamodb extends Datastore {
+    constructor(config) {
+        const tableName = config.tableName;
+        const region = config.region || DEFAULT_REGION;
+
+        super();
+        vogels.AWS.config.update({ region });
+
+        this.client = vogels.define(tableName, {
+            hashKey: 'id',
+            schema: schemas[tableName].base
+        });
+    }
+
+    get(config, callback) {
+        callback(null);
+    }
+
+    save(config, callback) {
+        callback(null);
+    }
+
+    update(config, callback) {
+        callback();
+    }
+
+    scan(config, callback) {
+        callback();
+    }
 }
 
-/**
- * gets a single item from Dynamodb datastore
- * @method get
- * @param  {Number}   id       item id
- * @param  {Function} callback function to call
- */
-EngineDynamodbStore.prototype.get = function get(id, callback) {
-    return callback(null, {});
-};
-
-/**
- * gets an array of items from Dynamodb datastore
- * @method scanAll
- * @param  {Object}   params       query parameters
- * @param  {Function} callback function to call
- */
-EngineDynamodbStore.prototype.scanAll = function scanAll(params, callback) {
-    return callback(null, []);
-};
-
-/**
- * Configures the dynamodb store to work for a specific table
- * @method configure
- * @param  {Object}  config configuration
- */
-EngineDynamodbStore.prototype.configure = function configure() {
-    return this;
-};
-
-module.exports = function createDynamodbStore(config) {
-    return new EngineDynamodbStore(config);
-};
+module.exports = Dynamodb;
