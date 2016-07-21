@@ -51,7 +51,7 @@ class Dynamodb extends Datastore {
         const client = this.client[config.table];
 
         if (!client) {
-            const err = new Error(`invalid table name "${config.table}"`);
+            const err = new Error(`Invalid table name "${config.table}"`);
 
             return callback(err);
         }
@@ -63,8 +63,37 @@ class Dynamodb extends Datastore {
         });
     }
 
+    /**
+     * Save a item in the specified DynamoDB table
+     * @param  {Object}   config             Configuration object
+     * @param  {String}   config.table       Table name
+     * @param  {Object}   config.params      Record data
+     * @param  {String}   config.params.id   Unique id. Typically the desired primary key
+     * @param  {Object}   config.params.data The data to save
+     * @param  {Function} callback           fn(err, data)
+     *                                       err - Error object
+     *                                       data - Data saved in the table
+     */
     save(config, callback) {
-        callback(null);
+        const id = config.params.id;
+        const userData = config.params.data;
+        const client = this.client[config.table];
+
+        if (!client) {
+            const err = new Error(`Invalid table name "${config.table}"`);
+
+            return callback(err);
+        }
+
+        userData.id = id;
+
+        return client.create(userData, (err, data) => {
+            if (err) {
+                return callback(err);
+            }
+
+            return callback(null, data.toJSON());
+        });
     }
 
     update(config, callback) {

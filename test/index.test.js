@@ -25,6 +25,7 @@ describe('index test', () => {
             toJSON: sinon.stub()
         };
         pipelinesClientMock = {
+            create: sinon.stub(),
             get: sinon.stub()
         };
 
@@ -173,7 +174,7 @@ describe('index test', () => {
                 table: 'tableUnicorn',
                 id: 'doesNotMatter'
             }, (err, data) => {
-                assert.match(err.message, /invalid table name/);
+                assert.match(err.message, /Invalid table name/);
                 assert.isNotOk(data);
                 done();
             });
@@ -196,7 +197,63 @@ describe('index test', () => {
 
     describe('save', () => {
         it('saves the data', (done) => {
-            done();
+            const clientResponse = {
+                toJSON: sinon.stub()
+            };
+            const expectedResult = {
+                id: 'someIdToPutHere',
+                key: 'value',
+                addedData: 'becauseTestsCheat'
+            };
+
+            clientResponse.toJSON.returns(expectedResult);
+            pipelinesClientMock.create.yieldsAsync(null, clientResponse);
+
+            datastore.save({
+                table: 'pipelines',
+                params: {
+                    id: 'someIdToPutHere',
+                    data: { key: 'value' }
+                }
+            }, (err, data) => {
+                assert.isNotOk(err);
+                assert.deepEqual(expectedResult, data);
+                assert.calledWith(pipelinesClientMock.create, {
+                    id: 'someIdToPutHere',
+                    key: 'value'
+                });
+                done();
+            });
+        });
+
+        it('fails when it encounters an error', (done) => {
+            const testError = new Error('testError');
+
+            pipelinesClientMock.create.yieldsAsync(testError);
+            datastore.save({
+                table: 'pipelines',
+                params: {
+                    id: 'doesNotMatter',
+                    data: {}
+                }
+            }, (err) => {
+                assert.isOk(err);
+                done();
+            });
+        });
+
+        it('fails when given an unknown table name', (done) => {
+            datastore.save({
+                table: 'doesNotExist',
+                params: {
+                    id: 'doesNotMatter',
+                    data: {}
+                }
+            }, (err, data) => {
+                assert.match(err.message, /Invalid table name/);
+                assert.isNotOk(data);
+                done();
+            });
         });
     });
 });
