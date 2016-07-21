@@ -6,9 +6,9 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('index test', () => {
-    let clientMock;
     let datastore;
     let Datastore;
+    let pipelinesClientMock;
     let responseMock;
     let dataSchemaMock;
     let vogelsMock;
@@ -24,7 +24,8 @@ describe('index test', () => {
         responseMock = {
             toJSON: sinon.stub()
         };
-        clientMock = {
+        pipelinesClientMock = {
+            create: sinon.stub(),
             get: sinon.stub()
         };
 
@@ -43,8 +44,8 @@ describe('index test', () => {
                     update: sinon.stub()
                 }
             },
-            // warning: the same client mock is passed back for all tables in these tests
-            define: sinon.stub().returns(clientMock)
+            // warning: only pipelines stub is assert for the purpose of unit tests
+            define: sinon.stub().withArgs('pipelines').returns(pipelinesClientMock)
         };
         mockery.registerMock('vogels', vogelsMock);
 
@@ -64,6 +65,18 @@ describe('index test', () => {
     });
 
     describe('constructor', () => {
+        let clientMock;
+
+        beforeEach(() => {
+            clientMock = {
+                get: sinon.stub()
+            };
+
+            vogelsMock.define = sinon.stub().returns(clientMock);
+
+            datastore = new Datastore();
+        });
+
         it('constructs the client with the default region', () => {
             assert.calledWith(vogelsMock.AWS.config.update, {
                 region: 'us-west-2'
@@ -122,17 +135,6 @@ describe('index test', () => {
     });
 
     describe('get', () => {
-        let pipelinesClientMock;
-
-        beforeEach(() => {
-            pipelinesClientMock = {
-                get: sinon.stub()
-            };
-            vogelsMock.define = sinon.stub().withArgs('pipelines').returns(pipelinesClientMock);
-
-            datastore = new Datastore();
-        });
-
         it('gets data by id', (done) => {
             const testParams = {
                 table: 'pipelines',
@@ -172,7 +174,7 @@ describe('index test', () => {
                 table: 'tableUnicorn',
                 id: 'doesNotMatter'
             }, (err, data) => {
-                assert.match(err.message, /invalid table name/);
+                assert.match(err.message, /Invalid table name/);
                 assert.isNotOk(data);
                 done();
             });
@@ -187,6 +189,68 @@ describe('index test', () => {
                 id: 'someId'
             }, (err, data) => {
                 assert.strictEqual(testError.message, err.message);
+                assert.isNotOk(data);
+                done();
+            });
+        });
+    });
+
+    describe('save', () => {
+        it('saves the data', (done) => {
+            const clientResponse = {
+                toJSON: sinon.stub()
+            };
+            const expectedResult = {
+                id: 'someIdToPutHere',
+                key: 'value',
+                addedData: 'becauseTestsCheat'
+            };
+
+            clientResponse.toJSON.returns(expectedResult);
+            pipelinesClientMock.create.yieldsAsync(null, clientResponse);
+
+            datastore.save({
+                table: 'pipelines',
+                params: {
+                    id: 'someIdToPutHere',
+                    data: { key: 'value' }
+                }
+            }, (err, data) => {
+                assert.isNotOk(err);
+                assert.deepEqual(expectedResult, data);
+                assert.calledWith(pipelinesClientMock.create, {
+                    id: 'someIdToPutHere',
+                    key: 'value'
+                });
+                done();
+            });
+        });
+
+        it('fails when it encounters an error', (done) => {
+            const testError = new Error('testError');
+
+            pipelinesClientMock.create.yieldsAsync(testError);
+            datastore.save({
+                table: 'pipelines',
+                params: {
+                    id: 'doesNotMatter',
+                    data: {}
+                }
+            }, (err) => {
+                assert.isOk(err);
+                done();
+            });
+        });
+
+        it('fails when given an unknown table name', (done) => {
+            datastore.save({
+                table: 'doesNotExist',
+                params: {
+                    id: 'doesNotMatter',
+                    data: {}
+                }
+            }, (err, data) => {
+                assert.match(err.message, /Invalid table name/);
                 assert.isNotOk(data);
                 done();
             });
