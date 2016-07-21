@@ -26,7 +26,8 @@ describe('index test', () => {
         };
         pipelinesClientMock = {
             create: sinon.stub(),
-            get: sinon.stub()
+            get: sinon.stub(),
+            update: sinon.stub()
         };
 
         dataSchemaMock = {
@@ -252,6 +253,109 @@ describe('index test', () => {
             }, (err, data) => {
                 assert.match(err.message, /Invalid table name/);
                 assert.isNotOk(data);
+                done();
+            });
+        });
+    });
+
+    describe('update', () => {
+        it('updates the data in the datastore', (done) => {
+            const clientReponse = {
+                toJSON: sinon.stub()
+            };
+            const id = 'someId';
+            const expectedResult = {
+                id,
+                targetKey: 'updatedValue',
+                otherKey: 'becauseTestsCheat'
+            };
+
+            pipelinesClientMock.update.yieldsAsync(null, clientReponse);
+            clientReponse.toJSON.returns(expectedResult);
+
+            datastore.update({
+                table: 'pipelines',
+                params: {
+                    id,
+                    data: { targetKey: 'updatedValue' }
+                }
+            }, (err, data) => {
+                assert.isNotOk(err);
+                assert.deepEqual(data, expectedResult);
+                assert.calledWith(pipelinesClientMock.update, {
+                    id,
+                    targetKey: 'updatedValue'
+                });
+                done();
+            });
+        });
+
+        /*
+        When using the 'expected' option, the error will look like this when it fails:
+        { [ConditionalCheckFailedException: The conditional request failed]
+          message: 'The conditional request failed',
+          code: 'ConditionalCheckFailedException',
+          time: Thu Jul 21 2016 16:56:35 GMT-0700 (PDT),
+          requestId: '<redacted>',
+          statusCode: 400,
+          retryable: false,
+          retryDelay: 0 }
+         */
+        it('returns null when item does not exist in datastore', (done) => {
+            const id = 'someId';
+            const testError = new Error('The conditional request failed');
+
+            testError.statusCode = 400;
+            pipelinesClientMock.update.yieldsAsync(testError);
+
+            datastore.update({
+                table: 'pipelines',
+                params: {
+                    id,
+                    data: {
+                        otherKey: 'value'
+                    }
+                }
+            }, (err, data) => {
+                assert.isNull(data);
+                assert.calledWith(pipelinesClientMock.update, {
+                    id,
+                    otherKey: 'value'
+                }, {
+                    expected: {
+                        id
+                    }
+                });
+                done();
+            });
+        });
+
+        it('returns nothing when given an unknown table name', (done) => {
+            datastore.update({
+                table: 'doesNotExist',
+                params: {
+                    id: 'doesNotMatter',
+                    data: {}
+                }
+            }, (err, data) => {
+                assert.isNull(err);
+                assert.isNull(data);
+                done();
+            });
+        });
+
+        it('fails when it encounters an error', (done) => {
+            const testError = new Error('testError');
+
+            pipelinesClientMock.update.yieldsAsync(testError);
+            datastore.update({
+                table: 'pipelines',
+                params: {
+                    id: 'doesNotMatter',
+                    data: {}
+                }
+            }, (err) => {
+                assert.strictEqual(testError.message, err.message);
                 done();
             });
         });
