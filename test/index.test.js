@@ -6,9 +6,9 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('index test', () => {
-    let clientMock;
     let datastore;
     let Datastore;
+    let pipelinesClientMock;
     let responseMock;
     let dataSchemaMock;
     let vogelsMock;
@@ -24,7 +24,7 @@ describe('index test', () => {
         responseMock = {
             toJSON: sinon.stub()
         };
-        clientMock = {
+        pipelinesClientMock = {
             get: sinon.stub()
         };
 
@@ -43,8 +43,8 @@ describe('index test', () => {
                     update: sinon.stub()
                 }
             },
-            // warning: the same client mock is passed back for all tables in these tests
-            define: sinon.stub().returns(clientMock)
+            // warning: only pipelines stub is assert for the purpose of unit tests
+            define: sinon.stub().withArgs('pipelines').returns(pipelinesClientMock)
         };
         mockery.registerMock('vogels', vogelsMock);
 
@@ -64,6 +64,18 @@ describe('index test', () => {
     });
 
     describe('constructor', () => {
+        let clientMock;
+
+        beforeEach(() => {
+            clientMock = {
+                get: sinon.stub()
+            };
+
+            vogelsMock.define = sinon.stub().returns(clientMock);
+
+            datastore = new Datastore();
+        });
+
         it('constructs the client with the default region', () => {
             assert.calledWith(vogelsMock.AWS.config.update, {
                 region: 'us-west-2'
@@ -122,17 +134,6 @@ describe('index test', () => {
     });
 
     describe('get', () => {
-        let pipelinesClientMock;
-
-        beforeEach(() => {
-            pipelinesClientMock = {
-                get: sinon.stub()
-            };
-            vogelsMock.define = sinon.stub().withArgs('pipelines').returns(pipelinesClientMock);
-
-            datastore = new Datastore();
-        });
-
         it('gets data by id', (done) => {
             const testParams = {
                 table: 'pipelines',
@@ -190,6 +191,12 @@ describe('index test', () => {
                 assert.isNotOk(data);
                 done();
             });
+        });
+    });
+
+    describe('save', () => {
+        it('saves the data', (done) => {
+            done();
         });
     });
 });
