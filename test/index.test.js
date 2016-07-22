@@ -138,7 +138,9 @@ describe('index test', () => {
         it('gets data by id', (done) => {
             const testParams = {
                 table: 'pipelines',
-                id: 'someId'
+                params: {
+                    id: 'someId'
+                }
             };
             const testData = {
                 id: 'data',
@@ -151,7 +153,7 @@ describe('index test', () => {
             datastore.get(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(testData, data);
-                assert.calledWith(pipelinesClientMock.get, testParams.id);
+                assert.calledWith(pipelinesClientMock.get, testParams.params.id);
                 done();
             });
         });
@@ -161,7 +163,9 @@ describe('index test', () => {
 
             datastore.get({
                 table: 'pipelines',
-                id: 'someId'
+                params: {
+                    id: 'someId'
+                }
             }, (err, data) => {
                 assert.isNotOk(err);
                 assert.isNotOk(data);
@@ -172,7 +176,9 @@ describe('index test', () => {
         it('fails when given an unknown table name', (done) => {
             datastore.get({
                 table: 'tableUnicorn',
-                id: 'doesNotMatter'
+                params: {
+                    id: 'doesNotMatter'
+                }
             }, (err, data) => {
                 assert.match(err.message, /Invalid table name/);
                 assert.isNotOk(data);
@@ -186,7 +192,9 @@ describe('index test', () => {
             pipelinesClientMock.get.yieldsAsync(testError);
             datastore.get({
                 table: 'pipelines',
-                id: 'someId'
+                params: {
+                    id: 'someId'
+                }
             }, (err, data) => {
                 assert.strictEqual(testError.message, err.message);
                 assert.isNotOk(data);
