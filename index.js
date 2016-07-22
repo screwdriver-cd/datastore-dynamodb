@@ -105,8 +105,42 @@ class Dynamodb extends Datastore {
         });
     }
 
+    /**
+     * Update a record in the datastore
+     * @param  {Object}   config             Configuration object
+     * @param  {String}   config.table       Table name
+     * @param  {Object}   config.params      Record data
+     * @param  {String}   config.params.id   Unique id. Typically the desired primary key
+     * @param  {Object}   config.params.data The data to update with
+     * @param  {Function} callback           fn(err, data)
+     *                                       err - Error object
+     *                                       data - Data saved in the table
+     */
     update(config, callback) {
-        callback();
+        const id = config.params.id;
+        const userData = config.params.data;
+        const client = this.client[config.table];
+        const updateOptions = {
+            expected: { id }
+        };
+
+        if (!client) {
+            return callback(null, null);
+        }
+
+        userData.id = id;
+
+        return client.update(userData, updateOptions, (err, data) => {
+            if (err) {
+                if (err.statusCode === 400) {
+                    return callback(null, null);
+                }
+
+                return callback(err);
+            }
+
+            return callback(err, data.toJSON());
+        });
     }
 
     scan(config, callback) {

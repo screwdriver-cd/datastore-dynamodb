@@ -82,7 +82,7 @@ Save a record in the datastore. Returns saved data.
 **Arguments**
 
 * `config` - An `object`. Each of its properties defines your save operation
-* `config.table` - A `string`. The datastore table name
+* `config.table` - A `string`. The DynamoDB table name
 * `config.params` - An object. Each of its properties defines the save parameters
 * `config.params.id` - A `string`. The ID to associate the data with
 * `config.params.data` - An object. This is what will be saved in the datastore
@@ -95,7 +95,7 @@ is the data that was saved in the DynamoDB table.
 const DynamoDB = require('screwdriver-datastore-imdb');
 const datastore = new DynamoDB();
 
-// successful get operation
+// successful save operation
 datastore.save({
     table: 'pets',
     params: {
@@ -108,6 +108,55 @@ datastore.save({
     console.log(data); // { id: 'toto', type: 'dog' }
 });
 ```
+
+###  update
+
+Update a record in the datastore. Returns `null` if the record does not exist
+
+**Arguments**
+
+* `config` - An `object`. Each of its properties defines your save operation
+* `config.table` - A `string`. The DynamoDB table name
+* `config.params` - An object. Each of its properties defines the save parameters
+* `config.params.id` - A `string`. The ID to associate the data with
+* `config.params.data` - An object. This is what will be saved in the datastore
+* `callback(err, result)`  - A callback which is called when the task is completed. It receives the `err` and `result`, where `result` is the data that was saved in the datastore. Returns `null` if the record does
+not exist.
+
+**Example**
+
+```js
+const DynamoDB = require('screwdriver-datastore-imdb');
+const datastore = new DynamoDB();
+
+// successful update operation
+datastore.update({
+    table: 'pets',
+    params: {
+        id: 'toto',
+        data: {
+            bestFriend: 'Dorothy'
+        }
+    }
+}, (err, data) => {
+    console.log(data); // { id: 'toto', type: 'dog', bestFriend: 'Dorothy' }
+});
+
+// update operation on a non-existing entry
+datastore.update({
+    table: 'pets',
+    params: {
+        id: 'trex',
+        data: {
+            bestFriend: 'me'
+        }
+    }
+}, (err, data) => {
+    console.error(err); // null
+    console.log(data); // null
+});
+```
+
 
 ## Testing
 
