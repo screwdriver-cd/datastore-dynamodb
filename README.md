@@ -24,12 +24,16 @@ const DynamoDB = require('screwdriver-datastore-dynamodb');
 const datastore = new DynamoDB();
 ```
 
-#### Define a specific region to interact with
+#### Define a specific region and credentials to interact with
 
 ```js
 const DynamoDB = require('screwdriver-datastore-dynamodb');
 
-const irelandDatastore = new DynamoDB({ region: 'eu-west-1' });
+const irelandDatastore = new DynamoDB({
+    region: 'eu-west-1',
+    accessKeyId: 'foo',
+    secretAccessKey: 'bar'
+});
 ```
 
 ### get
