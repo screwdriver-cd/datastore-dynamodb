@@ -19,14 +19,22 @@ class Dynamodb extends Datastore {
      * @param  {String} [config.region]  AWS region to operate in
      */
     constructor(config) {
-        let region = DEFAULT_REGION;
+        const awsConfig = {
+            region: DEFAULT_REGION
+        };
 
-        if (config && config.region) {
-            region = config.region;
+        if (config) {
+            if (config.region) {
+                awsConfig.region = config.region;
+            }
+            if (config.accessKeyId && config.secretAccessKey) {
+                awsConfig.accessKeyId = config.accessKeyId;
+                awsConfig.secretAccessKey = config.secretAccessKey;
+            }
         }
 
         super();
-        vogels.AWS.config.update({ region });
+        vogels.AWS.config.update(awsConfig);
 
         this.client = {};
         Object.keys(TABLE_SCHEMAS).forEach((table) => {

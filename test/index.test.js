@@ -132,6 +132,19 @@ describe('index test', () => {
                 region: 'my-region'
             });
         });
+
+        it('constructs the client with defined credentials', () => {
+            datastore = new Datastore({
+                accessKeyId: 'foo',
+                secretAccessKey: 'bar'
+            });
+
+            assert.calledWith(vogelsMock.AWS.config.update, {
+                region: 'us-west-2',
+                accessKeyId: 'foo',
+                secretAccessKey: 'bar'
+            });
+        });
     });
 
     describe('get', () => {
