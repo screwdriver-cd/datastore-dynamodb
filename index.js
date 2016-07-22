@@ -40,12 +40,13 @@ class Dynamodb extends Datastore {
 
     /**
      * Obtain an item from the DynamoDB table by primary key
-     * @param  {Object}   config       Configuration object
-     * @param  {String}   config.table Name of the table to interact with
-     * @param  {Object}   config.id    ID of the entry to fetch
-     * @param  {Function} callback     fn(err, data)
-     *                                 err - Error object
-     *                                 data - data from the table
+     * @param  {Object}   config             Configuration object
+     * @param  {String}   config.table       Name of the table to interact with
+     * @param  {Object}   config.params      Record Data
+     * @param  {String}   config.params.id   ID of the entry to fetch
+     * @param  {Function} callback           fn(err, data)
+     *                                       err - Error object
+     *                                       data - data from the table
      */
     get(config, callback) {
         const client = this.client[config.table];
@@ -56,7 +57,7 @@ class Dynamodb extends Datastore {
             return callback(err);
         }
 
-        return client.get(config.id, (err, data) => {
+        return client.get(config.params.id, (err, data) => {
             const result = (data) ? data.toJSON() : null;
 
             return callback(err, result);
