@@ -1,7 +1,7 @@
 {
   "name": "screwdriver-datastore-dynamodb",
-  "version": "0.0.1",
-  "description": "hapi interface with dynamodb",
+  "version": "1.0.0",
+  "description": "Screwdriver interface with dynamodb",
   "main": "index.js",
   "scripts": {
     "pretest": "eslint .",

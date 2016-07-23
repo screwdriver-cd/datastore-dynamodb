@@ -11,6 +11,7 @@ describe('index test', () => {
     let pipelinesClientMock;
     let responseMock;
     let dataSchemaMock;
+    let scanChainMock;
     let vogelsMock;
 
     before(() => {
@@ -22,11 +23,17 @@ describe('index test', () => {
 
     beforeEach(() => {
         responseMock = {
-            toJSON: sinon.stub()
+            toJSON: sinon.stub(),
+            Items: []
+        };
+        scanChainMock = {
+            limit: sinon.stub(),
+            exec: sinon.stub()
         };
         pipelinesClientMock = {
             create: sinon.stub(),
             get: sinon.stub(),
+            scan: sinon.stub().returns(scanChainMock),
             update: sinon.stub()
         };
 
@@ -377,6 +384,111 @@ describe('index test', () => {
                 }
             }, (err) => {
                 assert.strictEqual(testError.message, err.message);
+                done();
+            });
+        });
+    });
+
+    describe('scan', () => {
+        const testParams = {
+            table: 'pipelines',
+            params: {},
+            paginate: {
+                count: 2,
+                page: 2
+            }
+        };
+        let count;
+        const dynamoItem = { toJSON: sinon.stub() };
+
+        beforeEach(() => {
+            count = testParams.paginate.count * testParams.paginate.page;
+        });
+
+        it('scans all the data', (done) => {
+            const testData = [
+                {
+                    id: 'data',
+                    key: 'value'
+                },
+                {
+                    id: 'data',
+                    key: 'value'
+                }
+            ];
+
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+
+            for (; count > 0; count--) {
+                responseMock.Items[count - 1] = dynamoItem;
+            }
+
+            dynamoItem.toJSON.returns({
+                id: 'data',
+                key: 'value'
+            });
+            datastore.scan(testParams, (err, data) => {
+                assert.isNull(err);
+                assert.deepEqual(testData, data);
+                assert.calledWith(pipelinesClientMock.scan);
+                done();
+            });
+        });
+
+        it('returns empty array when no keys found', (done) => {
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+
+            responseMock.Items[0] = dynamoItem;
+
+            dynamoItem.toJSON.returns({
+                id: 'data',
+                key: 'value'
+            });
+
+            datastore.scan(testParams, (err, data) => {
+                assert.isNull(err);
+                assert.deepEqual([], data);
+                assert.calledWith(pipelinesClientMock.scan);
+                done();
+            });
+        });
+
+        it('fails when given an unknown table name', (done) => {
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(new Error('cannot find entries in table'));
+
+            datastore.scan({
+                table: 'tableUnicorn',
+                params: {},
+                paginate: {
+                    count: 2,
+                    page: 2
+                }
+            }, (err, data) => {
+                assert.match(err.message, /Invalid table name/);
+                assert.isNotOk(data);
+                done();
+            });
+        });
+
+        it('fails when it encounters an error', (done) => {
+            const testError = new Error('errorCommunicatingToApi');
+
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(testError);
+
+            datastore.scan({
+                table: 'pipelines',
+                params: {},
+                paginate: {
+                    count: 2,
+                    page: 2
+                }
+            }, (err, data) => {
+                assert.strictEqual(testError.message, err.message);
+                assert.isNotOk(data);
                 done();
             });
         });
