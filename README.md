@@ -44,14 +44,14 @@ Obtain a single record given an id. If the record does not exist, it will return
 
 * `config` - An `object`. Each of its properties defines your get operation
 * `config.table` - A `string`. The DynamoDB table name
-* `config.params` - An object. Each of its properties defines the get parameters
+* `config.params` - An `object`. Each of its properties defines the get parameters
 * `config.params.id` - A `string`. The ID of the item to fetch from the datastore
 * `callback(err, result)`  - A callback which is called when the task has succeeded. It receives the `err` and `result`, although no actual error is passed back. The result is always returned, with a `null` value designating that there is no item to be found.
 
 **Example**
 
 ```js
-const DynamoDB = require('screwdriver-datastore-imdb');
+const DynamoDB = require('screwdriver-datastore-dynamodb');
 const datastore = new DynamoDB();
 
 // successful get operation
@@ -83,16 +83,16 @@ Save a record in the datastore. Returns saved data.
 
 * `config` - An `object`. Each of its properties defines your save operation
 * `config.table` - A `string`. The DynamoDB table name
-* `config.params` - An object. Each of its properties defines the save parameters
+* `config.params` - An `object`. Each of its properties defines the save parameters
 * `config.params.id` - A `string`. The ID to associate the data with
-* `config.params.data` - An object. This is what will be saved in the datastore
+* `config.params.data` - An `object`. This is what will be saved in the datastore
 * `callback(err, result)`  - A callback which is called when the task has succeeded. It receives the `err` and `result`, where `result`
 is the data that was saved in the DynamoDB table.
 
 **Example**
 
 ```js
-const DynamoDB = require('screwdriver-datastore-imdb');
+const DynamoDB = require('screwdriver-datastore-dynamodb');
 const datastore = new DynamoDB();
 
 // successful save operation
@@ -117,16 +117,16 @@ Update a record in the datastore. Returns `null` if the record does not exist
 
 * `config` - An `object`. Each of its properties defines your save operation
 * `config.table` - A `string`. The DynamoDB table name
-* `config.params` - An object. Each of its properties defines the save parameters
+* `config.params` - An `object`. Each of its properties defines the save parameters
 * `config.params.id` - A `string`. The ID to associate the data with
-* `config.params.data` - An object. This is what will be saved in the datastore
+* `config.params.data` - An `object`. This is what will be saved in the datastore
 * `callback(err, result)`  - A callback which is called when the task is completed. It receives the `err` and `result`, where `result` is the data that was saved in the datastore. Returns `null` if the record does
 not exist.
 
 **Example**
 
 ```js
-const DynamoDB = require('screwdriver-datastore-imdb');
+const DynamoDB = require('screwdriver-datastore-dynamodb');
 const datastore = new DynamoDB();
 
 // successful update operation
@@ -154,6 +154,64 @@ datastore.update({
 }, (err, data) => {
     console.error(err); // null
     console.log(data); // null
+});
+```
+
+###  scan
+
+Scan for records in the datastore. Returns `[]` if the table is empty. Returns error if the table does not exist.
+
+**Arguments**
+
+* `config` - An `object`. Each of its properties defines your save operation
+* `config.table` - A `string`. The DynamoDB table name
+* `config.params` - An `object`. Each of its properties defines the query parameters
+* `config.paginate` - An `object`. Each of its properties defines the pagination parameters
+* `config.paginate.count` - A `number`. The number of items per page
+* `config.paginate.page` - An `number`. This is the page number of the set you wish for the datastore to return
+* `callback(err, result)`  - A callback which is called when the task is completed. It receives the `err` and `result`, where `result` is the list of records in the table. Returns `[]` if the table is empty. Returns error if the table does not exist.
+
+**Example**
+
+```js
+const DynamoDB = require('screwdriver-datastore-dynamodb');
+const datastore = new DynamoDB();
+
+// successful scan operation
+datastore.scan({
+    table: 'animalNoises',
+    params: {},
+    paginate: {
+        page: 2,
+        count: 2
+    }
+}, (err, data) => {
+    console.log(data); // [{ id: 2, sound: 'meow' }, { id: 3, sound: 'woof' }]
+});
+
+// if animalNoises table only has 10 entries
+datastore.scan({
+    table: 'animalNoises',
+    params: {},
+    paginate: {
+        page: 3,
+        count: 5
+    }
+}, (err, data) => {
+    console.log(data); // []
+});
+
+// scan operation on a non-existing entry
+datastore.scan({
+    table: 'unicorns',
+    params: {},
+    paginate: {
+        page: 2,
+        count: 2
+    }
+}, (err, data) => {
+    console.error(err); // [Error: Invalid table name "unicorns"]
+    console.log(data); // undefined
 });
 ```
 

@@ -143,8 +143,40 @@ class Dynamodb extends Datastore {
         });
     }
 
+    /**
+     * Scan records in the datastore
+     * @method scan
+     * @param  {Object}   config                Configuration object
+     * @param  {String}   config.table          Table name
+     * @param  {Object}   [config.params]       Record data
+     * @param  {Object}   config.paginate       Pagination parameters
+     * @param  {Number}   config.paginate.count Number of items per page
+     * @param  {Number}   config.paginate.page  Specific page of the set to return
+     * @param  {Function} callback              fn(err, data)
+     *                                          err - Error object
+     *                                          data - List of records in the table
+     */
     scan(config, callback) {
-        callback();
+        const client = this.client[config.table];
+        const limitTotalCount = config.paginate.page * config.paginate.count;
+        const startIndex = (config.paginate.page - 1) * config.paginate.count;
+
+        if (!client) {
+            const err = new Error(`Invalid table name "${config.table}"`);
+
+            return callback(err);
+        }
+
+        return client.scan().limit(limitTotalCount)  // scan all items up to and including last item specified
+        .exec((err, data) => {
+            if (err) {
+                return callback(err);
+            }
+            const result = data.Items.slice(startIndex);    // pick out items from page specified
+            const response = result.map((item) => item.toJSON());
+
+            return callback(null, response);
+        });
     }
 }
 
