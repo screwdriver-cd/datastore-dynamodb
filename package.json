@@ -40,8 +40,8 @@
     "sinon": "^1.17.4"
   },
   "dependencies": {
-    "screwdriver-data-schema": "^4.0.0",
-    "screwdriver-datastore-base": "0.0.3",
+    "screwdriver-data-schema": "^5.0.4",
+    "screwdriver-datastore-base": "^1.0.0",
     "vogels": "^2.2.0"
   }
 }

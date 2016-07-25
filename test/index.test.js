@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 'use strict';
 const assert = require('chai').assert;
 const mockery = require('mockery');
@@ -38,11 +39,22 @@ describe('index test', () => {
         };
 
         dataSchemaMock = {
-            build: { base: sinon.stub() },
-            job: { base: sinon.stub() },
-            pipeline: { base: sinon.stub() },
-            platform: { base: sinon.stub() },
-            user: { base: sinon.stub() }
+            models: {
+                build: { base: sinon.stub() },
+                job: { base: sinon.stub() },
+                pipeline: { base: sinon.stub() },
+                platform: { base: sinon.stub() },
+                user: { base: sinon.stub() }
+            },
+            plugins: {
+                datastore: {
+                    get: sinon.stub(),
+                    update: sinon.stub(),
+                    remove: sinon.stub(),
+                    save: sinon.stub(),
+                    scan: sinon.stub()
+                }
+            }
         };
         mockery.registerMock('screwdriver-data-schema', dataSchemaMock);
 
@@ -94,7 +106,7 @@ describe('index test', () => {
         it('constructs the builds client', () => {
             assert.calledWith(vogelsMock.define, 'builds', {
                 hashKey: 'id',
-                schema: dataSchemaMock.build.base,
+                schema: dataSchemaMock.models.build.base,
                 tableName: 'builds'
             });
         });
@@ -102,7 +114,7 @@ describe('index test', () => {
         it('constructs the jobs client', () => {
             assert.calledWith(vogelsMock.define, 'jobs', {
                 hashKey: 'id',
-                schema: dataSchemaMock.job.base,
+                schema: dataSchemaMock.models.job.base,
                 tableName: 'jobs'
             });
         });
@@ -110,7 +122,7 @@ describe('index test', () => {
         it('constructs the pipelines client', () => {
             assert.calledWith(vogelsMock.define, 'pipelines', {
                 hashKey: 'id',
-                schema: dataSchemaMock.pipeline.base,
+                schema: dataSchemaMock.models.pipeline.base,
                 tableName: 'pipelines'
             });
         });
@@ -118,7 +130,7 @@ describe('index test', () => {
         it('constructs the platforms client', () => {
             assert.calledWith(vogelsMock.define, 'platforms', {
                 hashKey: 'id',
-                schema: dataSchemaMock.platform.base,
+                schema: dataSchemaMock.models.platform.base,
                 tableName: 'platforms'
             });
         });
@@ -126,7 +138,7 @@ describe('index test', () => {
         it('constructs the users client', () => {
             assert.calledWith(vogelsMock.define, 'users', {
                 hashKey: 'id',
-                schema: dataSchemaMock.user.base,
+                schema: dataSchemaMock.models.user.base,
                 tableName: 'users'
             });
         });
@@ -171,7 +183,7 @@ describe('index test', () => {
             pipelinesClientMock.get.yieldsAsync(null, responseMock);
             responseMock.toJSON.returns(testData);
 
-            datastore.get(testParams, (err, data) => {
+            datastore._get(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(testData, data);
                 assert.calledWith(pipelinesClientMock.get, testParams.params.id);
@@ -182,7 +194,7 @@ describe('index test', () => {
         it('gracefully understands that no one is returned when it does not exist', (done) => {
             pipelinesClientMock.get.yieldsAsync();
 
-            datastore.get({
+            datastore._get({
                 table: 'pipelines',
                 params: {
                     id: 'someId'
@@ -195,7 +207,7 @@ describe('index test', () => {
         });
 
         it('fails when given an unknown table name', (done) => {
-            datastore.get({
+            datastore._get({
                 table: 'tableUnicorn',
                 params: {
                     id: 'doesNotMatter'
@@ -211,7 +223,7 @@ describe('index test', () => {
             const testError = new Error('errorCommunicatingToApi');
 
             pipelinesClientMock.get.yieldsAsync(testError);
-            datastore.get({
+            datastore._get({
                 table: 'pipelines',
                 params: {
                     id: 'someId'
@@ -238,7 +250,7 @@ describe('index test', () => {
             clientResponse.toJSON.returns(expectedResult);
             pipelinesClientMock.create.yieldsAsync(null, clientResponse);
 
-            datastore.save({
+            datastore._save({
                 table: 'pipelines',
                 params: {
                     id: 'someIdToPutHere',
@@ -259,7 +271,7 @@ describe('index test', () => {
             const testError = new Error('testError');
 
             pipelinesClientMock.create.yieldsAsync(testError);
-            datastore.save({
+            datastore._save({
                 table: 'pipelines',
                 params: {
                     id: 'doesNotMatter',
@@ -272,7 +284,7 @@ describe('index test', () => {
         });
 
         it('fails when given an unknown table name', (done) => {
-            datastore.save({
+            datastore._save({
                 table: 'doesNotExist',
                 params: {
                     id: 'doesNotMatter',
@@ -301,7 +313,7 @@ describe('index test', () => {
             pipelinesClientMock.update.yieldsAsync(null, clientReponse);
             clientReponse.toJSON.returns(expectedResult);
 
-            datastore.update({
+            datastore._update({
                 table: 'pipelines',
                 params: {
                     id,
@@ -336,7 +348,7 @@ describe('index test', () => {
             testError.statusCode = 400;
             pipelinesClientMock.update.yieldsAsync(testError);
 
-            datastore.update({
+            datastore._update({
                 table: 'pipelines',
                 params: {
                     id,
@@ -359,7 +371,7 @@ describe('index test', () => {
         });
 
         it('returns nothing when given an unknown table name', (done) => {
-            datastore.update({
+            datastore._update({
                 table: 'doesNotExist',
                 params: {
                     id: 'doesNotMatter',
@@ -376,7 +388,7 @@ describe('index test', () => {
             const testError = new Error('testError');
 
             pipelinesClientMock.update.yieldsAsync(testError);
-            datastore.update({
+            datastore._update({
                 table: 'pipelines',
                 params: {
                     id: 'doesNotMatter',
@@ -428,7 +440,7 @@ describe('index test', () => {
                 id: 'data',
                 key: 'value'
             });
-            datastore.scan(testParams, (err, data) => {
+            datastore._scan(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(testData, data);
                 assert.calledWith(pipelinesClientMock.scan);
@@ -447,7 +459,7 @@ describe('index test', () => {
                 key: 'value'
             });
 
-            datastore.scan(testParams, (err, data) => {
+            datastore._scan(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual([], data);
                 assert.calledWith(pipelinesClientMock.scan);
@@ -459,7 +471,7 @@ describe('index test', () => {
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(new Error('cannot find entries in table'));
 
-            datastore.scan({
+            datastore._scan({
                 table: 'tableUnicorn',
                 params: {},
                 paginate: {
@@ -479,7 +491,7 @@ describe('index test', () => {
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(testError);
 
-            datastore.scan({
+            datastore._scan({
                 table: 'pipelines',
                 params: {},
                 paginate: {
