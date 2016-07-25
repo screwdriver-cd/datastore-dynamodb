@@ -5,11 +5,11 @@ const vogels = require('vogels');
 
 const DEFAULT_REGION = 'us-west-2';
 const TABLE_SCHEMAS = {
-    builds: schemas.build.base,
-    jobs: schemas.job.base,
-    pipelines: schemas.pipeline.base,
-    platforms: schemas.platform.base,
-    users: schemas.user.base
+    builds: schemas.models.build.base,
+    jobs: schemas.models.job.base,
+    pipelines: schemas.models.pipeline.base,
+    platforms: schemas.models.platform.base,
+    users: schemas.models.user.base
 };
 
 class Dynamodb extends Datastore {
@@ -56,7 +56,7 @@ class Dynamodb extends Datastore {
      *                                       err - Error object
      *                                       data - data from the table
      */
-    get(config, callback) {
+    _get(config, callback) {
         const client = this.client[config.table];
 
         if (!client) {
@@ -83,7 +83,7 @@ class Dynamodb extends Datastore {
      *                                       err - Error object
      *                                       data - Data saved in the table
      */
-    save(config, callback) {
+    _save(config, callback) {
         const id = config.params.id;
         const userData = config.params.data;
         const client = this.client[config.table];
@@ -116,7 +116,7 @@ class Dynamodb extends Datastore {
      *                                       err - Error object
      *                                       data - Data saved in the table
      */
-    update(config, callback) {
+    _update(config, callback) {
         const id = config.params.id;
         const userData = config.params.data;
         const client = this.client[config.table];
@@ -156,7 +156,7 @@ class Dynamodb extends Datastore {
      *                                          err - Error object
      *                                          data - List of records in the table
      */
-    scan(config, callback) {
+    _scan(config, callback) {
         const client = this.client[config.table];
         const limitTotalCount = config.paginate.page * config.paginate.count;
         const startIndex = (config.paginate.page - 1) * config.paginate.count;
