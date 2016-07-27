@@ -4,13 +4,7 @@ const schemas = require('screwdriver-data-schema');
 const vogels = require('vogels');
 
 const DEFAULT_REGION = 'us-west-2';
-const TABLE_SCHEMAS = {
-    builds: schemas.models.build.base,
-    jobs: schemas.models.job.base,
-    pipelines: schemas.models.pipeline.base,
-    platforms: schemas.models.platform.base,
-    users: schemas.models.user.base
-};
+const TABLE_MODELS = schemas.models;
 
 class Dynamodb extends Datastore {
     /**
@@ -37,11 +31,13 @@ class Dynamodb extends Datastore {
         vogels.AWS.config.update(awsConfig);
 
         this.client = {};
-        Object.keys(TABLE_SCHEMAS).forEach((table) => {
-            this.client[table] = vogels.define(table, {
+        Object.keys(TABLE_MODELS).forEach((modelName) => {
+            const model = TABLE_MODELS[modelName];
+
+            this.client[model.tableName] = vogels.define(modelName, {
                 hashKey: 'id',
-                schema: TABLE_SCHEMAS[table],
-                tableName: table
+                schema: model.base,
+                tableName: model.tableName
             });
         });
     }
