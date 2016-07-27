@@ -40,11 +40,22 @@ describe('index test', () => {
 
         dataSchemaMock = {
             models: {
-                build: { base: sinon.stub() },
-                job: { base: sinon.stub() },
-                pipeline: { base: sinon.stub() },
-                platform: { base: sinon.stub() },
-                user: { base: sinon.stub() }
+                build: {
+                    base: sinon.stub(),
+                    tableName: 'builds'
+                },
+                job: {
+                    base: sinon.stub(),
+                    tableName: 'jobs'
+                },
+                pipeline: {
+                    base: sinon.stub(),
+                    tableName: 'pipelines'
+                },
+                user: {
+                    base: sinon.stub(),
+                    tableName: 'users'
+                }
             },
             plugins: {
                 datastore: {
@@ -104,7 +115,7 @@ describe('index test', () => {
         });
 
         it('constructs the builds client', () => {
-            assert.calledWith(vogelsMock.define, 'builds', {
+            assert.calledWith(vogelsMock.define, 'build', {
                 hashKey: 'id',
                 schema: dataSchemaMock.models.build.base,
                 tableName: 'builds'
@@ -112,7 +123,7 @@ describe('index test', () => {
         });
 
         it('constructs the jobs client', () => {
-            assert.calledWith(vogelsMock.define, 'jobs', {
+            assert.calledWith(vogelsMock.define, 'job', {
                 hashKey: 'id',
                 schema: dataSchemaMock.models.job.base,
                 tableName: 'jobs'
@@ -120,23 +131,15 @@ describe('index test', () => {
         });
 
         it('constructs the pipelines client', () => {
-            assert.calledWith(vogelsMock.define, 'pipelines', {
+            assert.calledWith(vogelsMock.define, 'pipeline', {
                 hashKey: 'id',
                 schema: dataSchemaMock.models.pipeline.base,
                 tableName: 'pipelines'
             });
         });
 
-        it('constructs the platforms client', () => {
-            assert.calledWith(vogelsMock.define, 'platforms', {
-                hashKey: 'id',
-                schema: dataSchemaMock.models.platform.base,
-                tableName: 'platforms'
-            });
-        });
-
         it('constructs the users client', () => {
-            assert.calledWith(vogelsMock.define, 'users', {
+            assert.calledWith(vogelsMock.define, 'user', {
                 hashKey: 'id',
                 schema: dataSchemaMock.models.user.base,
                 tableName: 'users'
