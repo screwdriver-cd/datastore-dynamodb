@@ -42,6 +42,6 @@
   "dependencies": {
     "screwdriver-data-schema": "^5.0.4",
     "screwdriver-datastore-base": "^1.0.0",
-    "vogels": "^2.2.0"
+    "screwdriver-dynamic-dynamodb": "^2.0.0"
   }
 }

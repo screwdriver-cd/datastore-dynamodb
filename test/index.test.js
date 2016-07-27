@@ -9,11 +9,13 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('index test', () => {
     let datastore;
     let Datastore;
-    let pipelinesClientMock;
+    let clientMock;
     let responseMock;
     let dataSchemaMock;
     let scanChainMock;
-    let vogelsMock;
+    let queryChainMock;
+    let bobbyMock;
+    let BobbyMockFactory;
 
     before(() => {
         mockery.enable({
@@ -31,20 +33,36 @@ describe('index test', () => {
             limit: sinon.stub(),
             exec: sinon.stub()
         };
-        pipelinesClientMock = {
+        queryChainMock = {
+            usingIndex: sinon.stub().returns(scanChainMock)
+        };
+        clientMock = {
             create: sinon.stub(),
             get: sinon.stub(),
             scan: sinon.stub().returns(scanChainMock),
+            query: sinon.stub().returns(queryChainMock),
             update: sinon.stub()
         };
 
         dataSchemaMock = {
             models: {
-                build: { base: sinon.stub() },
-                job: { base: sinon.stub() },
-                pipeline: { base: sinon.stub() },
-                platform: { base: sinon.stub() },
-                user: { base: sinon.stub() }
+                pipeline: {
+                    base: sinon.stub(),
+                    indexes: ['foo'],
+                    tableName: 'pipelines'
+                },
+                job: {
+                    base: sinon.stub(),
+                    tableName: 'jobs'
+                },
+                build: {
+                    base: sinon.stub(),
+                    tableName: 'builds'
+                },
+                user: {
+                    base: sinon.stub(),
+                    tableName: 'users'
+                }
             },
             plugins: {
                 datastore: {
@@ -58,16 +76,12 @@ describe('index test', () => {
         };
         mockery.registerMock('screwdriver-data-schema', dataSchemaMock);
 
-        vogelsMock = {
-            AWS: {
-                config: {
-                    update: sinon.stub()
-                }
-            },
-            // warning: only pipelines stub is assert for the purpose of unit tests
-            define: sinon.stub().withArgs('pipelines').returns(pipelinesClientMock)
+        bobbyMock = {
+            defineTable: sinon.stub().returns(clientMock)
         };
-        mockery.registerMock('vogels', vogelsMock);
+        BobbyMockFactory = sinon.stub();
+        BobbyMockFactory.prototype.defineTable = bobbyMock.defineTable;
+        mockery.registerMock('screwdriver-dynamic-dynamodb', BobbyMockFactory);
 
         /* eslint-disable global-require */
         Datastore = require('../index');
@@ -85,62 +99,21 @@ describe('index test', () => {
     });
 
     describe('constructor', () => {
-        let clientMock;
-
         beforeEach(() => {
-            clientMock = {
-                get: sinon.stub()
-            };
-
-            vogelsMock.define = sinon.stub().returns(clientMock);
-
             datastore = new Datastore();
         });
 
-        it('constructs the client with the default region', () => {
-            assert.calledWith(vogelsMock.AWS.config.update, {
+        it('constructs with the default region', () => {
+            assert.calledWith(BobbyMockFactory, {
                 region: 'us-west-2'
             });
         });
 
-        it('constructs the builds client', () => {
-            assert.calledWith(vogelsMock.define, 'builds', {
-                hashKey: 'id',
-                schema: dataSchemaMock.models.build.base,
-                tableName: 'builds'
-            });
-        });
-
-        it('constructs the jobs client', () => {
-            assert.calledWith(vogelsMock.define, 'jobs', {
-                hashKey: 'id',
-                schema: dataSchemaMock.models.job.base,
-                tableName: 'jobs'
-            });
-        });
-
-        it('constructs the pipelines client', () => {
-            assert.calledWith(vogelsMock.define, 'pipelines', {
-                hashKey: 'id',
-                schema: dataSchemaMock.models.pipeline.base,
-                tableName: 'pipelines'
-            });
-        });
-
-        it('constructs the platforms client', () => {
-            assert.calledWith(vogelsMock.define, 'platforms', {
-                hashKey: 'id',
-                schema: dataSchemaMock.models.platform.base,
-                tableName: 'platforms'
-            });
-        });
-
-        it('constructs the users client', () => {
-            assert.calledWith(vogelsMock.define, 'users', {
-                hashKey: 'id',
-                schema: dataSchemaMock.models.user.base,
-                tableName: 'users'
-            });
+        it('constructs the clients', () => {
+            assert.calledWith(bobbyMock.defineTable, 'build');
+            assert.calledWith(bobbyMock.defineTable, 'job');
+            assert.calledWith(bobbyMock.defineTable, 'pipeline');
+            assert.calledWith(bobbyMock.defineTable, 'user');
         });
 
         it('constructs the client with a defined region', () => {
@@ -148,7 +121,7 @@ describe('index test', () => {
                 region: 'my-region'
             });
 
-            assert.calledWith(vogelsMock.AWS.config.update, {
+            assert.calledWith(BobbyMockFactory, {
                 region: 'my-region'
             });
         });
@@ -159,7 +132,7 @@ describe('index test', () => {
                 secretAccessKey: 'bar'
             });
 
-            assert.calledWith(vogelsMock.AWS.config.update, {
+            assert.calledWith(BobbyMockFactory, {
                 region: 'us-west-2',
                 accessKeyId: 'foo',
                 secretAccessKey: 'bar'
@@ -180,19 +153,19 @@ describe('index test', () => {
                 key: 'value'
             };
 
-            pipelinesClientMock.get.yieldsAsync(null, responseMock);
+            clientMock.get.yieldsAsync(null, responseMock);
             responseMock.toJSON.returns(testData);
 
             datastore._get(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(testData, data);
-                assert.calledWith(pipelinesClientMock.get, testParams.params.id);
+                assert.calledWith(clientMock.get, testParams.params.id);
                 done();
             });
         });
 
         it('gracefully understands that no one is returned when it does not exist', (done) => {
-            pipelinesClientMock.get.yieldsAsync();
+            clientMock.get.yieldsAsync();
 
             datastore._get({
                 table: 'pipelines',
@@ -222,7 +195,7 @@ describe('index test', () => {
         it('fails when it encounters an error', (done) => {
             const testError = new Error('errorCommunicatingToApi');
 
-            pipelinesClientMock.get.yieldsAsync(testError);
+            clientMock.get.yieldsAsync(testError);
             datastore._get({
                 table: 'pipelines',
                 params: {
@@ -248,7 +221,7 @@ describe('index test', () => {
             };
 
             clientResponse.toJSON.returns(expectedResult);
-            pipelinesClientMock.create.yieldsAsync(null, clientResponse);
+            clientMock.create.yieldsAsync(null, clientResponse);
 
             datastore._save({
                 table: 'pipelines',
@@ -259,7 +232,7 @@ describe('index test', () => {
             }, (err, data) => {
                 assert.isNotOk(err);
                 assert.deepEqual(expectedResult, data);
-                assert.calledWith(pipelinesClientMock.create, {
+                assert.calledWith(clientMock.create, {
                     id: 'someIdToPutHere',
                     key: 'value'
                 });
@@ -270,7 +243,7 @@ describe('index test', () => {
         it('fails when it encounters an error', (done) => {
             const testError = new Error('testError');
 
-            pipelinesClientMock.create.yieldsAsync(testError);
+            clientMock.create.yieldsAsync(testError);
             datastore._save({
                 table: 'pipelines',
                 params: {
@@ -310,7 +283,7 @@ describe('index test', () => {
                 otherKey: 'becauseTestsCheat'
             };
 
-            pipelinesClientMock.update.yieldsAsync(null, clientReponse);
+            clientMock.update.yieldsAsync(null, clientReponse);
             clientReponse.toJSON.returns(expectedResult);
 
             datastore._update({
@@ -322,7 +295,7 @@ describe('index test', () => {
             }, (err, data) => {
                 assert.isNotOk(err);
                 assert.deepEqual(data, expectedResult);
-                assert.calledWith(pipelinesClientMock.update, {
+                assert.calledWith(clientMock.update, {
                     id,
                     targetKey: 'updatedValue'
                 });
@@ -346,7 +319,7 @@ describe('index test', () => {
             const testError = new Error('The conditional request failed');
 
             testError.statusCode = 400;
-            pipelinesClientMock.update.yieldsAsync(testError);
+            clientMock.update.yieldsAsync(testError);
 
             datastore._update({
                 table: 'pipelines',
@@ -358,7 +331,7 @@ describe('index test', () => {
                 }
             }, (err, data) => {
                 assert.isNull(data);
-                assert.calledWith(pipelinesClientMock.update, {
+                assert.calledWith(clientMock.update, {
                     id,
                     otherKey: 'value'
                 }, {
@@ -387,7 +360,7 @@ describe('index test', () => {
         it('fails when it encounters an error', (done) => {
             const testError = new Error('testError');
 
-            pipelinesClientMock.update.yieldsAsync(testError);
+            clientMock.update.yieldsAsync(testError);
             datastore._update({
                 table: 'pipelines',
                 params: {
@@ -404,7 +377,6 @@ describe('index test', () => {
     describe('scan', () => {
         const testParams = {
             table: 'pipelines',
-            params: {},
             paginate: {
                 count: 2,
                 page: 2
@@ -443,7 +415,71 @@ describe('index test', () => {
             datastore._scan(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(testData, data);
-                assert.calledWith(pipelinesClientMock.scan);
+                assert.calledWith(clientMock.scan);
+                done();
+            });
+        });
+
+        it('scans table when index does not exist', (done) => {
+            const testFilterParams = {
+                table: 'pipelines',
+                params: {
+                    bar: 'baz'
+                },
+                paginate: {
+                    count: 2,
+                    page: 2
+                }
+            };
+
+            for (count = 4; count > 0; count--) {
+                responseMock.Items[count - 1] = dynamoItem;
+            }
+
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+            dynamoItem.toJSON.returns({
+                id: 'data',
+                key: 'value'
+            });
+            datastore._scan(testFilterParams, (err, data) => {
+                assert.isNull(err);
+                assert.isOk(data);
+                assert.calledWith(clientMock.scan);
+                assert.notCalled(clientMock.query);
+                assert.notCalled(queryChainMock.usingIndex);
+                done();
+            });
+        });
+
+        it('scans using index with filter params', (done) => {
+            const testFilterParams = {
+                table: 'pipelines',
+                params: {
+                    foo: 'bar'
+                },
+                paginate: {
+                    count: 2,
+                    page: 2
+                }
+            };
+
+            for (count = 4; count > 0; count--) {
+                responseMock.Items[count - 1] = dynamoItem;
+            }
+
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+            dynamoItem.toJSON.returns({
+                id: 'data',
+                key: 'value'
+            });
+            datastore._scan(testFilterParams, (err, data) => {
+                assert.isNull(err);
+                assert.isOk(data);
+                assert.calledWith(clientMock.scan);
+                assert.calledWith(clientMock.query, 'bar');
+                assert.calledWith(queryChainMock.usingIndex, 'fooIndex');
                 done();
             });
         });
@@ -462,7 +498,7 @@ describe('index test', () => {
             datastore._scan(testParams, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual([], data);
-                assert.calledWith(pipelinesClientMock.scan);
+                assert.calledWith(clientMock.scan);
                 done();
             });
         });
