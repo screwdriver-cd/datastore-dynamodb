@@ -165,7 +165,7 @@ Scan for records in the datastore. Returns `[]` if the table is empty. Returns e
 
 * `config` - An `object`. Each of its properties defines your save operation
 * `config.table` - A `string`. The DynamoDB table name
-* `config.params` - An `object`. Each of its properties defines the query parameters
+* `config.params` - An `object`. An object of key => value. In this implementation, the `key` is intended to be an index, and the `value` is the lookup value
 * `config.paginate` - An `object`. Each of its properties defines the pagination parameters
 * `config.paginate.count` - A `number`. The number of items per page
 * `config.paginate.page` - An `number`. This is the page number of the set you wish for the datastore to return

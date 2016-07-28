@@ -1,24 +1,20 @@
 'use strict';
 const Datastore = require('screwdriver-datastore-base');
 const schemas = require('screwdriver-data-schema');
-const vogels = require('vogels');
-
+const Bobby = require('screwdriver-dynamic-dynamodb');
 const DEFAULT_REGION = 'us-west-2';
-const TABLE_SCHEMAS = {
-    builds: schemas.models.build.base,
-    jobs: schemas.models.job.base,
-    pipelines: schemas.models.pipeline.base,
-    platforms: schemas.models.platform.base,
-    users: schemas.models.user.base
-};
+const MODELS = ['build', 'job', 'pipeline', 'user'];
 
 class Dynamodb extends Datastore {
     /**
      * Constructs a Dynamodb object
      * @param  {Object} [config]         Configuration object
      * @param  {String} [config.region]  AWS region to operate in
+     * @param  {String} [config.prefix]  The table prefix to use
      */
     constructor(config) {
+        super();
+
         const awsConfig = {
             region: DEFAULT_REGION
         };
@@ -31,18 +27,20 @@ class Dynamodb extends Datastore {
                 awsConfig.accessKeyId = config.accessKeyId;
                 awsConfig.secretAccessKey = config.secretAccessKey;
             }
+            this.prefix = config.prefix;
         }
 
-        super();
-        vogels.AWS.config.update(awsConfig);
+        const bobby = new Bobby(awsConfig);
 
-        this.client = {};
-        Object.keys(TABLE_SCHEMAS).forEach((table) => {
-            this.client[table] = vogels.define(table, {
-                hashKey: 'id',
-                schema: TABLE_SCHEMAS[table],
-                tableName: table
-            });
+        this.clients = {};
+        this.tableModels = {};
+
+        MODELS.forEach((modelName) => {
+            const table = bobby.defineTable(modelName, this.prefix);
+            const model = schemas.models[modelName];
+
+            this.clients[model.tableName] = table;
+            this.tableModels[model.tableName] = model;
         });
     }
 
@@ -57,7 +55,7 @@ class Dynamodb extends Datastore {
      *                                       data - data from the table
      */
     _get(config, callback) {
-        const client = this.client[config.table];
+        const client = this.clients[config.table];
 
         if (!client) {
             const err = new Error(`Invalid table name "${config.table}"`);
@@ -86,7 +84,7 @@ class Dynamodb extends Datastore {
     _save(config, callback) {
         const id = config.params.id;
         const userData = config.params.data;
-        const client = this.client[config.table];
+        const client = this.clients[config.table];
 
         if (!client) {
             const err = new Error(`Invalid table name "${config.table}"`);
@@ -119,7 +117,7 @@ class Dynamodb extends Datastore {
     _update(config, callback) {
         const id = config.params.id;
         const userData = config.params.data;
-        const client = this.client[config.table];
+        const client = this.clients[config.table];
         const updateOptions = {
             expected: { id }
         };
@@ -148,7 +146,7 @@ class Dynamodb extends Datastore {
      * @method scan
      * @param  {Object}   config                Configuration object
      * @param  {String}   config.table          Table name
-     * @param  {Object}   [config.params]       Record data
+     * @param  {Object}   [config.params]       index => values to query on
      * @param  {Object}   config.paginate       Pagination parameters
      * @param  {Number}   config.paginate.count Number of items per page
      * @param  {Number}   config.paginate.page  Specific page of the set to return
@@ -157,9 +155,11 @@ class Dynamodb extends Datastore {
      *                                          data - List of records in the table
      */
     _scan(config, callback) {
-        const client = this.client[config.table];
+        const client = this.clients[config.table];
+        const model = this.tableModels[config.table];
         const limitTotalCount = config.paginate.page * config.paginate.count;
         const startIndex = (config.paginate.page - 1) * config.paginate.count;
+        const filterParams = config.params;
 
         if (!client) {
             const err = new Error(`Invalid table name "${config.table}"`);
@@ -167,8 +167,20 @@ class Dynamodb extends Datastore {
             return callback(err);
         }
 
-        return client.scan().limit(limitTotalCount)  // scan all items up to and including last item specified
-        .exec((err, data) => {
+        let scanner = client.scan();
+
+        if (filterParams) {
+            Object.keys(filterParams).some((param) => {
+                if (model.indexes.indexOf(param) === -1) {
+                    return false;
+                }
+                scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
+
+                return true;
+            });
+        }
+
+        return scanner.limit(limitTotalCount).exec((err, data) => {
             if (err) {
                 return callback(err);
             }
