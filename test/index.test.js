@@ -372,6 +372,22 @@ describe('index test', () => {
                 done();
             });
         });
+
+        it('fails when it encounters a synchronous error', (done) => {
+            const testError = new Error('testError');
+
+            clientMock.update.throws(testError);
+            datastore._update({
+                table: 'pipelines',
+                params: {
+                    id: 'doNotCare',
+                    data: {}
+                }
+            }, (err) => {
+                assert.deepEqual(err, testError);
+                done();
+            });
+        });
     });
 
     describe('scan', () => {
