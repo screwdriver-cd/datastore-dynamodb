@@ -1,5 +1,6 @@
 'use strict';
 const Datastore = require('screwdriver-datastore-base');
+const nodeify = require('promise-nodeify');
 const schemas = require('screwdriver-data-schema');
 const Bobby = require('screwdriver-dynamic-dynamodb');
 const DEFAULT_REGION = 'us-west-2';
@@ -128,17 +129,21 @@ class Dynamodb extends Datastore {
 
         userData.id = id;
 
-        return client.update(userData, updateOptions, (err, data) => {
-            if (err) {
-                if (err.statusCode === 400) {
-                    return callback(null, null);
+        const clientUpdate = new Promise((resolve, reject) => {
+            client.update(userData, updateOptions, (err, data) => {
+                if (err) {
+                    if (err.statusCode === 400) {
+                        return resolve(null);
+                    }
+
+                    return reject(err);
                 }
 
-                return callback(err);
-            }
-
-            return callback(err, data.toJSON());
+                return resolve(data.toJSON());
+            });
         });
+
+        return nodeify(clientUpdate, callback);
     }
 
     /**
