@@ -4,7 +4,7 @@ const nodeify = require('promise-nodeify');
 const schemas = require('screwdriver-data-schema');
 const Bobby = require('screwdriver-dynamic-dynamodb');
 const DEFAULT_REGION = 'us-west-2';
-const MODELS = ['build', 'job', 'pipeline', 'user'];
+const MODELS = Object.keys(schemas.models);
 
 class Dynamodb extends Datastore {
     /**

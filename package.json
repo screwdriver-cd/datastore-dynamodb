@@ -33,13 +33,13 @@
     "eslint": "^3.2.2",
     "eslint-config-screwdriver": "^2.0.0",
     "eslint-plugin-import": "^1.12.0",
-    "jenkins-mocha": "^2.6.0",
+    "jenkins-mocha": "^3.0.0",
     "mockery": "^1.7.0",
     "sinon": "^1.17.4"
   },
   "dependencies": {
     "promise-nodeify": "0.1.0",
-    "screwdriver-data-schema": "^10.0.4",
+    "screwdriver-data-schema": "^11.0.0",
     "screwdriver-datastore-base": "^1.0.0",
     "screwdriver-dynamic-dynamodb": "^3.0.0"
   }
