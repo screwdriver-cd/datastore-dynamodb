@@ -30,6 +30,8 @@ describe('index test', () => {
             Items: []
         };
         scanChainMock = {
+            ascending: sinon.stub(),
+            descending: sinon.stub(),
             limit: sinon.stub(),
             exec: sinon.stub()
         };
@@ -417,6 +419,7 @@ describe('index test', () => {
                 }
             ];
 
+            scanChainMock.descending.returns(scanChainMock);
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
@@ -452,6 +455,7 @@ describe('index test', () => {
                 responseMock.Items[count - 1] = dynamoItem;
             }
 
+            scanChainMock.descending.returns(scanChainMock);
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
             dynamoItem.toJSON.returns({
@@ -484,6 +488,7 @@ describe('index test', () => {
                 responseMock.Items[count - 1] = dynamoItem;
             }
 
+            scanChainMock.descending.returns(scanChainMock);
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
             dynamoItem.toJSON.returns({
@@ -500,7 +505,32 @@ describe('index test', () => {
             });
         });
 
+        it('scans using sort option', (done) => {
+            const testFilterParams = {
+                table: 'pipelines',
+                params: {
+                    foo: 'bar'
+                },
+                paginate: {
+                    count: 2,
+                    page: 2
+                },
+                sort: 'ascending'
+            };
+
+            scanChainMock.ascending.returns(scanChainMock);
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+            datastore._scan(testFilterParams, (err, data) => {
+                assert.isNull(err);
+                assert.isOk(data);
+                assert.calledOnce(scanChainMock.ascending);
+                done();
+            });
+        });
+
         it('returns empty array when no keys found', (done) => {
+            scanChainMock.descending.returns(scanChainMock);
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
@@ -540,6 +570,7 @@ describe('index test', () => {
         it('fails when it encounters an error', (done) => {
             const testError = new Error('errorCommunicatingToApi');
 
+            scanChainMock.descending.returns(scanChainMock);
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(testError);
 
