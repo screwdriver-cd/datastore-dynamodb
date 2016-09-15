@@ -155,6 +155,7 @@ class Dynamodb extends Datastore {
      * @param  {Object}   config.paginate       Pagination parameters
      * @param  {Number}   config.paginate.count Number of items per page
      * @param  {Number}   config.paginate.page  Specific page of the set to return
+     * @param  {String}   [config.sort]         Sorting option based on GSI range key. Ascending or descending.
      * @param  {Function} callback              fn(err, data)
      *                                          err - Error object
      *                                          data - List of records in the table
@@ -184,6 +185,8 @@ class Dynamodb extends Datastore {
                 return true;
             });
         }
+
+        scanner = (config.sort === 'ascending') ? scanner.ascending() : scanner.descending();
 
         return scanner.limit(limitTotalCount).exec((err, data) => {
             if (err) {
