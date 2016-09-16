@@ -472,7 +472,7 @@ describe('index test', () => {
             });
         });
 
-        it('scans using index with filter params', (done) => {
+        it('query using index with filter params', (done) => {
             const testFilterParams = {
                 table: 'pipelines',
                 params: {
@@ -505,7 +505,7 @@ describe('index test', () => {
             });
         });
 
-        it('scans using sort option', (done) => {
+        it('query using sort option', (done) => {
             const testFilterParams = {
                 table: 'pipelines',
                 params: {
@@ -525,6 +525,27 @@ describe('index test', () => {
                 assert.isNull(err);
                 assert.isOk(data);
                 assert.calledOnce(scanChainMock.ascending);
+                done();
+            });
+        });
+
+        it('scan with no sorting', (done) => {
+            const testFilterParams = {
+                table: 'pipelines',
+                params: {},
+                paginate: {
+                    count: 2,
+                    page: 2
+                },
+                sort: 'ascending'
+            };
+
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+            datastore._scan(testFilterParams, (err, data) => {
+                assert.isNull(err);
+                assert.isOk(data);
+                assert.notCalled(scanChainMock.descending);
                 done();
             });
         });

@@ -181,12 +181,12 @@ class Dynamodb extends Datastore {
                     return false;
                 }
                 scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
+                scanner = (config.sort === 'ascending') ?
+                    scanner.ascending() : scanner.descending();
 
                 return true;
             });
         }
-
-        scanner = (config.sort === 'ascending') ? scanner.ascending() : scanner.descending();
 
         return scanner.limit(limitTotalCount).exec((err, data) => {
             if (err) {
