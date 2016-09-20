@@ -1,6 +1,7 @@
 'use strict';
 const Datastore = require('screwdriver-datastore-base');
 const nodeify = require('promise-nodeify');
+const clone = require('clone');
 const schemas = require('screwdriver-data-schema');
 const Bobby = require('screwdriver-dynamic-dynamodb');
 const DEFAULT_REGION = 'us-west-2';
@@ -165,7 +166,7 @@ class Dynamodb extends Datastore {
         const model = this.tableModels[config.table];
         const limitTotalCount = config.paginate.page * config.paginate.count;
         const startIndex = (config.paginate.page - 1) * config.paginate.count;
-        const filterParams = config.params;
+        const filterParams = clone(config.params);
 
         if (!client) {
             const err = new Error(`Invalid table name "${config.table}"`);
@@ -175,17 +176,24 @@ class Dynamodb extends Datastore {
 
         let scanner = client.scan();
 
-        if (filterParams) {
-            Object.keys(filterParams).some((param) => {
-                if (model.indexes.indexOf(param) === -1) {
-                    return false;
-                }
-                scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
-                scanner = (config.sort === 'ascending') ?
-                    scanner.ascending() : scanner.descending();
+        if (filterParams && Object.keys(filterParams).length > 0) {
+            model.indexes.some(param => {
+                if (filterParams[param]) {
+                    scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
+                    delete filterParams[param];
 
-                return true;
+                    return true;
+                }
+
+                return false;
             });
+
+            Object.keys(filterParams).forEach((param) => {
+                scanner.filter(`${param}`).equals(filterParams[param]);
+            });
+
+            scanner = (config.sort === 'ascending')
+                ? scanner.ascending() : scanner.descending();
         }
 
         return scanner.limit(limitTotalCount).exec((err, data) => {

@@ -14,6 +14,7 @@ describe('index test', () => {
     let dataSchemaMock;
     let scanChainMock;
     let queryChainMock;
+    let filterMock;
     let bobbyMock;
     let BobbyMockFactory;
 
@@ -29,11 +30,15 @@ describe('index test', () => {
             toJSON: sinon.stub(),
             Items: []
         };
+        filterMock = {
+            equals: sinon.stub()
+        };
         scanChainMock = {
             ascending: sinon.stub(),
             descending: sinon.stub(),
             limit: sinon.stub(),
-            exec: sinon.stub()
+            exec: sinon.stub(),
+            filter: sinon.stub().returns(filterMock)
         };
         queryChainMock = {
             usingIndex: sinon.stub().returns(scanChainMock)
@@ -505,6 +510,38 @@ describe('index test', () => {
             });
         });
 
+        it('query with multiple params', (done) => {
+            const testFilterParams = {
+                table: 'pipelines',
+                params: {
+                    stuff: '1234',
+                    foo: 'bar'
+                },
+                paginate: {
+                    count: 2,
+                    page: 2
+                },
+                sort: 'ascending'
+            };
+
+            scanChainMock.ascending.returns(scanChainMock);
+            scanChainMock.limit.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+            scanChainMock.filter.returns(filterMock);
+            datastore._scan(testFilterParams, (err, data) => {
+                assert.isNull(err);
+                assert.isOk(data);
+                assert.calledWith(clientMock.scan);
+                assert.calledWith(clientMock.query, 'bar');
+                assert.calledWith(queryChainMock.usingIndex, 'fooIndex');
+                assert.calledOnce(scanChainMock.ascending);
+                assert.calledWith(scanChainMock.filter, 'stuff');
+                assert.calledWith(filterMock.equals, '1234');
+
+                done();
+            });
+        });
+
         it('query using sort option', (done) => {
             const testFilterParams = {
                 table: 'pipelines',
@@ -540,12 +577,13 @@ describe('index test', () => {
                 sort: 'ascending'
             };
 
+            clientMock.scan.returns(scanChainMock);
             scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
             datastore._scan(testFilterParams, (err, data) => {
                 assert.isNull(err);
                 assert.isOk(data);
-                assert.notCalled(scanChainMock.descending);
+                assert.notCalled(scanChainMock.ascending);
                 done();
             });
         });
