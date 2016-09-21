@@ -48,7 +48,8 @@ describe('index test', () => {
             get: sinon.stub(),
             scan: sinon.stub().returns(scanChainMock),
             query: sinon.stub().returns(queryChainMock),
-            update: sinon.stub()
+            update: sinon.stub(),
+            destroy: sinon.stub()
         };
 
         dataSchemaMock = {
@@ -188,7 +189,7 @@ describe('index test', () => {
                 }
             }).then(() => {
                 throw new Error('Oops');
-            }, (err) => {
+            }).catch((err) => {
                 assert.isOk(err, 'Error should be returned');
                 assert.match(err.message, /Invalid table name/);
             })
@@ -198,14 +199,17 @@ describe('index test', () => {
             const testError = new Error('errorCommunicatingToApi');
 
             clientMock.get.yieldsAsync(testError);
-            datastore._get({
+
+            return datastore._get({
                 table: 'pipelines',
                 params: {
                     id: 'someId'
                 }
-            }).then((err, data) => {
-                assert.strictEqual(testError.message, err.message);
-                assert.isNotOk(data);
+            }).then(() => {
+                throw new Error('Oops');
+            }).catch((err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, testError.message);
             });
         });
     });
@@ -267,11 +271,61 @@ describe('index test', () => {
                 }
             }).then(() => {
                 throw new Error('Oops');
-            }, (err) => {
+            }).catch((err) => {
                 assert.isOk(err, 'Error should be returned');
                 assert.match(err.message, /Invalid table name/);
             })
         );
+    });
+
+    describe('remove', () => {
+        it('removes data by id', () => {
+            const testParams = {
+                table: 'pipelines',
+                params: {
+                    id: 'someId'
+                }
+            };
+
+            clientMock.destroy.yieldsAsync(null);
+
+            return datastore._remove(testParams).then((data) => {
+                assert.isNull(data);
+                assert.calledWith(clientMock.destroy, testParams.params.id);
+            });
+        });
+
+        it('fails when given an unknown table name', () =>
+            datastore._remove({
+                table: 'tableUnicorn',
+                params: {
+                    id: 'doesNotMatter'
+                }
+            }).then(() => {
+                throw new Error('Oops');
+            }).catch((err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.match(err.message, /Invalid table name/);
+            })
+        );
+
+        it('fails when it encounters an error', () => {
+            const testError = new Error('errorCommunicatingToApi');
+
+            clientMock.destroy.yieldsAsync(testError);
+
+            return datastore._remove({
+                table: 'pipelines',
+                params: {
+                    id: 'someId'
+                }
+            }).then(() => {
+                throw new Error('Oops');
+            }).catch((err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.match(err.message, testError.message);
+            });
+        });
     });
 
     describe('update', () => {
@@ -343,14 +397,19 @@ describe('index test', () => {
             });
         });
 
-        it('returns nothing when given an unknown table name', () =>
+        it('fails when given an unknown table name', () =>
             datastore._update({
                 table: 'doesNotExist',
                 params: {
                     id: 'doesNotMatter',
                     data: {}
                 }
-            }).then((data) => assert.isNull(data))
+            }).then(() => {
+                throw new Error('Oops');
+            }).catch((err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.match(err.message, /Invalid table name/);
+            })
         );
 
         it('fails when it encounters an error', () => {
@@ -366,7 +425,7 @@ describe('index test', () => {
                 }
             }).then(() => {
                 throw new Error('Oops');
-            }, (err) => {
+            }).catch((err) => {
                 assert.isOk(err, 'Error should be returned');
                 assert.equal(err.message, testError.message);
             });
@@ -385,7 +444,7 @@ describe('index test', () => {
                 }
             }).then(() => {
                 throw new Error('Oops');
-            }, (err) => {
+            }).catch((err) => {
                 assert.isOk(err, 'Error should be returned');
                 assert.equal(err.message, testError.message);
             });
@@ -606,7 +665,7 @@ describe('index test', () => {
                 }
             }).then(() => {
                 throw new Error('Oops');
-            }, (err) => {
+            }).catch((err) => {
                 assert.isOk(err, 'Error should be returned');
                 assert.match(err.message, /Invalid table name/);
             });
@@ -628,7 +687,7 @@ describe('index test', () => {
                 }
             }).then(() => {
                 throw new Error('Oops');
-            }, (err) => {
+            }).catch((err) => {
                 assert.isOk(err, 'Error should be returned');
                 assert.match(err.message, testError.message);
             });

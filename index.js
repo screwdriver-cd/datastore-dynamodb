@@ -64,6 +64,9 @@ class Dynamodb extends Datastore {
             }
 
             return client.get(config.params.id, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
                 const result = (data) ? data.toJSON() : null;
 
                 return resolve(result);
@@ -105,6 +108,34 @@ class Dynamodb extends Datastore {
     }
 
     /**
+     * Remove an item from the DynamoDB table by primary key
+     * @param  {Object}   config             Configuration object
+     * @param  {String}   config.table       Name of the table to interact with
+     * @param  {Object}   config.params      Record Data
+     * @param  {String}   config.params.id   ID of the entry to remove
+     * @return {Promise}                     Resolves to null if remove successfully
+     */
+    _remove(config) {
+        const client = this.clients[config.table];
+
+        return new Promise((resolve, reject) => {
+            if (!client) {
+                const err = new Error(`Invalid table name "${config.table}"`);
+
+                return reject(err);
+            }
+
+            return client.destroy(config.params.id, (err) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(null);
+            });
+        });
+    }
+
+    /**
      * Update a record in the datastore
      * @param  {Object}   config             Configuration object
      * @param  {String}   config.table       Table name
@@ -123,7 +154,9 @@ class Dynamodb extends Datastore {
 
         return new Promise((resolve, reject) => {
             if (!client) {
-                return resolve(null);
+                const err = new Error(`Invalid table name "${config.table}"`);
+
+                return reject(err);
             }
 
             userData.id = id;
