@@ -1,6 +1,5 @@
 'use strict';
 const Datastore = require('screwdriver-datastore-base');
-const nodeify = require('promise-nodeify');
 const clone = require('clone');
 const schemas = require('screwdriver-data-schema');
 const Bobby = require('screwdriver-dynamic-dynamodb');
@@ -52,23 +51,26 @@ class Dynamodb extends Datastore {
      * @param  {String}   config.table       Name of the table to interact with
      * @param  {Object}   config.params      Record Data
      * @param  {String}   config.params.id   ID of the entry to fetch
-     * @param  {Function} callback           fn(err, data)
-     *                                       err - Error object
-     *                                       data - data from the table
+     * @return {Promise}                     Resolves to the record found from datastore
      */
-    _get(config, callback) {
+    _get(config) {
         const client = this.clients[config.table];
 
-        if (!client) {
-            const err = new Error(`Invalid table name "${config.table}"`);
+        return new Promise((resolve, reject) => {
+            if (!client) {
+                const err = new Error(`Invalid table name "${config.table}"`);
 
-            return callback(err);
-        }
+                return reject(err);
+            }
 
-        return client.get(config.params.id, (err, data) => {
-            const result = (data) ? data.toJSON() : null;
+            return client.get(config.params.id, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+                const result = (data) ? data.toJSON() : null;
 
-            return callback(err, result);
+                return resolve(result);
+            });
         });
     }
 
@@ -79,29 +81,57 @@ class Dynamodb extends Datastore {
      * @param  {Object}   config.params      Record data
      * @param  {String}   config.params.id   Unique id. Typically the desired primary key
      * @param  {Object}   config.params.data The data to save
-     * @param  {Function} callback           fn(err, data)
-     *                                       err - Error object
-     *                                       data - Data saved in the table
+     * @return {Promise}                     Resolves to the record that was saved
      */
-    _save(config, callback) {
+    _save(config) {
         const id = config.params.id;
         const userData = config.params.data;
         const client = this.clients[config.table];
 
-        if (!client) {
-            const err = new Error(`Invalid table name "${config.table}"`);
+        return new Promise((resolve, reject) => {
+            if (!client) {
+                const err = new Error(`Invalid table name "${config.table}"`);
 
-            return callback(err);
-        }
-
-        userData.id = id;
-
-        return client.create(userData, (err, data) => {
-            if (err) {
-                return callback(err);
+                return reject(err);
             }
 
-            return callback(null, data.toJSON());
+            userData.id = id;
+
+            return client.create(userData, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(data.toJSON());
+            });
+        });
+    }
+
+    /**
+     * Remove an item from the DynamoDB table by primary key
+     * @param  {Object}   config             Configuration object
+     * @param  {String}   config.table       Name of the table to interact with
+     * @param  {Object}   config.params      Record Data
+     * @param  {String}   config.params.id   ID of the entry to remove
+     * @return {Promise}                     Resolves to null if remove successfully
+     */
+    _remove(config) {
+        const client = this.clients[config.table];
+
+        return new Promise((resolve, reject) => {
+            if (!client) {
+                const err = new Error(`Invalid table name "${config.table}"`);
+
+                return reject(err);
+            }
+
+            return client.destroy(config.params.id, (err) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(null);
+            });
         });
     }
 
@@ -112,11 +142,9 @@ class Dynamodb extends Datastore {
      * @param  {Object}   config.params      Record data
      * @param  {String}   config.params.id   Unique id. Typically the desired primary key
      * @param  {Object}   config.params.data The data to update with
-     * @param  {Function} callback           fn(err, data)
-     *                                       err - Error object
-     *                                       data - Data saved in the table
+     * @return {Promise}                     Resolves to the record that was updated
      */
-    _update(config, callback) {
+    _update(config) {
         const id = config.params.id;
         const userData = config.params.data;
         const client = this.clients[config.table];
@@ -124,14 +152,16 @@ class Dynamodb extends Datastore {
             expected: { id }
         };
 
-        if (!client) {
-            return callback(null, null);
-        }
+        return new Promise((resolve, reject) => {
+            if (!client) {
+                const err = new Error(`Invalid table name "${config.table}"`);
 
-        userData.id = id;
+                return reject(err);
+            }
 
-        const clientUpdate = new Promise((resolve, reject) => {
-            client.update(userData, updateOptions, (err, data) => {
+            userData.id = id;
+
+            return client.update(userData, updateOptions, (err, data) => {
                 if (err) {
                     if (err.statusCode === 400) {
                         return resolve(null);
@@ -143,8 +173,6 @@ class Dynamodb extends Datastore {
                 return resolve(data.toJSON());
             });
         });
-
-        return nodeify(clientUpdate, callback);
     }
 
     /**
@@ -157,53 +185,53 @@ class Dynamodb extends Datastore {
      * @param  {Number}   config.paginate.count Number of items per page
      * @param  {Number}   config.paginate.page  Specific page of the set to return
      * @param  {String}   [config.sort]         Sorting option based on GSI range key. Ascending or descending.
-     * @param  {Function} callback              fn(err, data)
-     *                                          err - Error object
-     *                                          data - List of records in the table
+     * @return {Promise}                        Resolves to an array of records
      */
-    _scan(config, callback) {
+    _scan(config) {
         const client = this.clients[config.table];
         const model = this.tableModels[config.table];
         const limitTotalCount = config.paginate.page * config.paginate.count;
         const startIndex = (config.paginate.page - 1) * config.paginate.count;
         const filterParams = clone(config.params);
 
-        if (!client) {
-            const err = new Error(`Invalid table name "${config.table}"`);
+        return new Promise((resolve, reject) => {
+            if (!client) {
+                const err = new Error(`Invalid table name "${config.table}"`);
 
-            return callback(err);
-        }
-
-        let scanner = client.scan();
-
-        if (filterParams && Object.keys(filterParams).length > 0) {
-            model.indexes.some(param => {
-                if (filterParams[param]) {
-                    scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
-                    delete filterParams[param];
-
-                    return true;
-                }
-
-                return false;
-            });
-
-            Object.keys(filterParams).forEach((param) => {
-                scanner.filter(`${param}`).equals(filterParams[param]);
-            });
-
-            scanner = (config.sort === 'ascending')
-                ? scanner.ascending() : scanner.descending();
-        }
-
-        return scanner.limit(limitTotalCount).exec((err, data) => {
-            if (err) {
-                return callback(err);
+                return reject(err);
             }
-            const result = data.Items.slice(startIndex);    // pick out items from page specified
-            const response = result.map((item) => item.toJSON());
 
-            return callback(null, response);
+            let scanner = client.scan();
+
+            if (filterParams && Object.keys(filterParams).length > 0) {
+                model.indexes.some(param => {
+                    if (filterParams[param]) {
+                        scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
+                        delete filterParams[param];
+
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                Object.keys(filterParams).forEach((param) => {
+                    scanner.filter(`${param}`).equals(filterParams[param]);
+                });
+
+                scanner = (config.sort === 'ascending')
+                    ? scanner.ascending() : scanner.descending();
+            }
+
+            return scanner.limit(limitTotalCount).exec((err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+                const result = data.Items.slice(startIndex);    // pick out items from page specified
+                const response = result.map((item) => item.toJSON());
+
+                return resolve(response);
+            });
         });
     }
 }
