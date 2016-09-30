@@ -177,6 +177,7 @@ class Dynamodb extends Datastore {
 
     /**
      * Scan records in the datastore
+     * Pagination is not being used because of DynamoDB's way of combining limit and filter
      * @method scan
      * @param  {Object}   config                Configuration object
      * @param  {String}   config.table          Table name
@@ -190,8 +191,6 @@ class Dynamodb extends Datastore {
     _scan(config) {
         const client = this.clients[config.table];
         const model = this.tableModels[config.table];
-        const limitTotalCount = config.paginate.page * config.paginate.count;
-        const startIndex = (config.paginate.page - 1) * config.paginate.count;
         const filterParams = clone(config.params);
 
         return new Promise((resolve, reject) => {
@@ -223,12 +222,12 @@ class Dynamodb extends Datastore {
                     ? scanner.ascending() : scanner.descending();
             }
 
-            return scanner.limit(limitTotalCount).exec((err, data) => {
+            return scanner.exec((err, data) => {
                 if (err) {
                     return reject(err);
                 }
-                const result = data.Items.slice(startIndex);    // pick out items from page specified
-                const response = result.map((item) => item.toJSON());
+
+                const response = data.Items.map((item) => item.toJSON());
 
                 return resolve(response);
             });

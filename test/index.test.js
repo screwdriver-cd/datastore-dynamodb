@@ -36,7 +36,6 @@ describe('index test', () => {
         scanChainMock = {
             ascending: sinon.stub(),
             descending: sinon.stub(),
-            limit: sinon.stub(),
             exec: sinon.stub(),
             filter: sinon.stub().returns(filterMock)
         };
@@ -165,7 +164,7 @@ describe('index test', () => {
             responseMock.toJSON.returns(testData);
 
             return datastore._get(testParams).then((data) => {
-                assert.deepEqual(testData, data);
+                assert.deepEqual(data, testData);
                 assert.calledWith(clientMock.get, testParams.params.id);
             });
         });
@@ -235,7 +234,7 @@ describe('index test', () => {
                     data: { key: 'value' }
                 }
             }).then((data) => {
-                assert.deepEqual(expectedResult, data);
+                assert.deepEqual(data, expectedResult);
                 assert.calledWith(clientMock.create, {
                     id: 'someIdToPutHere',
                     key: 'value'
@@ -459,15 +458,19 @@ describe('index test', () => {
                 page: 2
             }
         };
-        let count;
+        let count = 4;
         const dynamoItem = { toJSON: sinon.stub() };
-
-        beforeEach(() => {
-            count = testParams.paginate.count * testParams.paginate.page;
-        });
 
         it('scans all the data', () => {
             const testData = [
+                {
+                    id: 'data',
+                    key: 'value'
+                },
+                {
+                    id: 'data',
+                    key: 'value'
+                },
                 {
                     id: 'data',
                     key: 'value'
@@ -479,7 +482,6 @@ describe('index test', () => {
             ];
 
             scanChainMock.descending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
             for (; count > 0; count--) {
@@ -492,7 +494,7 @@ describe('index test', () => {
             });
 
             return datastore._scan(testParams).then((data) => {
-                assert.deepEqual(testData, data);
+                assert.deepEqual(data, testData);
                 assert.calledWith(clientMock.scan);
             });
         });
@@ -514,7 +516,6 @@ describe('index test', () => {
             }
 
             scanChainMock.descending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
             dynamoItem.toJSON.returns({
                 id: 'data',
@@ -546,7 +547,6 @@ describe('index test', () => {
             }
 
             scanChainMock.descending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
             dynamoItem.toJSON.returns({
                 id: 'data',
@@ -576,7 +576,6 @@ describe('index test', () => {
             };
 
             scanChainMock.ascending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
             scanChainMock.filter.returns(filterMock);
 
@@ -605,7 +604,6 @@ describe('index test', () => {
             };
 
             scanChainMock.ascending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
             return datastore._scan(testFilterParams).then(() => {
@@ -625,7 +623,6 @@ describe('index test', () => {
             };
 
             clientMock.scan.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
             return datastore._scan(testFilterParams).then((data) => {
@@ -636,24 +633,15 @@ describe('index test', () => {
 
         it('returns empty array when no keys found', () => {
             scanChainMock.descending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
-            responseMock.Items[0] = dynamoItem;
-
-            dynamoItem.toJSON.returns({
-                id: 'data',
-                key: 'value'
-            });
-
             return datastore._scan(testParams).then((data) => {
-                assert.deepEqual([], data);
+                assert.deepEqual(data, []);
                 assert.calledWith(clientMock.scan);
             });
         });
 
         it('fails when given an unknown table name', () => {
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(new Error('cannot find entries in table'));
 
             return datastore._scan({
@@ -675,7 +663,6 @@ describe('index test', () => {
             const testError = new Error('errorCommunicatingToApi');
 
             scanChainMock.descending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(testError);
 
             return datastore._scan({
