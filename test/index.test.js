@@ -65,7 +65,9 @@ describe('index test', () => {
                 },
                 build: {
                     base: sinon.stub(),
-                    tableName: 'builds'
+                    tableName: 'builds',
+                    indexes: ['foo', 'bar'],
+                    rangeKeys: ['number', null]
                 },
                 user: {
                     base: sinon.stub(),
@@ -585,52 +587,8 @@ describe('index test', () => {
                 assert.calledWith(clientMock.scan);
                 assert.calledWith(clientMock.query, 'bar');
                 assert.calledWith(queryChainMock.usingIndex, 'fooIndex');
-                assert.calledOnce(scanChainMock.ascending);
                 assert.calledWith(scanChainMock.filter, 'stuff');
                 assert.calledWith(filterMock.equals, '1234');
-            });
-        });
-
-        it('query using sort option', () => {
-            const testFilterParams = {
-                table: 'pipelines',
-                params: {
-                    foo: 'bar'
-                },
-                paginate: {
-                    count: 2,
-                    page: 2
-                },
-                sort: 'ascending'
-            };
-
-            scanChainMock.ascending.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
-            scanChainMock.exec.yieldsAsync(null, responseMock);
-
-            return datastore._scan(testFilterParams).then(() => {
-                assert.calledOnce(scanChainMock.ascending);
-            });
-        });
-
-        it('scan with no sorting', () => {
-            const testFilterParams = {
-                table: 'pipelines',
-                params: {},
-                paginate: {
-                    count: 2,
-                    page: 2
-                },
-                sort: 'ascending'
-            };
-
-            clientMock.scan.returns(scanChainMock);
-            scanChainMock.limit.returns(scanChainMock);
-            scanChainMock.exec.yieldsAsync(null, responseMock);
-
-            return datastore._scan(testFilterParams).then((data) => {
-                assert.isOk(data);
-                assert.notCalled(scanChainMock.ascending);
             });
         });
 
@@ -691,6 +649,54 @@ describe('index test', () => {
                 assert.isOk(err, 'Error should be returned');
                 assert.match(err.message, testError.message);
             });
+        });
+
+        describe('sorting', () => {
+            let testFilterParams;
+
+            beforeEach(() => {
+                testFilterParams = {
+                    table: 'builds',
+                    params: {
+                        foo: 'bar'
+                    },
+                    paginate: {
+                        count: 2,
+                        page: 2
+                    },
+                    sort: 'ascending'
+                };
+
+                clientMock.scan.returns(scanChainMock);
+                scanChainMock.ascending.returns(scanChainMock);
+                scanChainMock.descending.returns(scanChainMock);
+                scanChainMock.limit.returns(scanChainMock);
+                scanChainMock.exec.yieldsAsync(null, responseMock);
+            });
+
+            it('no sorting', () => {
+                testFilterParams.table = 'pipelines';       // pipeline table does not have rangeKeys
+
+                return datastore._scan(testFilterParams).then((data) => {
+                    assert.isOk(data);
+                    assert.notCalled(scanChainMock.ascending);
+                    assert.notCalled(scanChainMock.descending);
+                });
+            });
+
+            it('sort descending if rangeKeys is available', () => {
+                testFilterParams.sort = 'descending';
+
+                return datastore._scan(testFilterParams).then(() => {
+                    assert.calledOnce(scanChainMock.descending);
+                });
+            });
+
+            it('sort ascending if rangeKeys is available', () =>
+                datastore._scan(testFilterParams).then(() => {
+                    assert.calledOnce(scanChainMock.ascending);
+                })
+            );
         });
     });
 });

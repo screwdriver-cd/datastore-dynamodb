@@ -219,8 +219,10 @@ class Dynamodb extends Datastore {
                     scanner.filter(`${param}`).equals(filterParams[param]);
                 });
 
-                scanner = (config.sort === 'ascending')
-                    ? scanner.ascending() : scanner.descending();
+                if (model.rangeKeys) {
+                    scanner = (config.sort === 'ascending')
+                        ? scanner.ascending() : scanner.descending();
+                }
             }
 
             return scanner.limit(limitTotalCount).exec((err, data) => {
