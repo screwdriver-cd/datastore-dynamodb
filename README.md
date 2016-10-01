@@ -161,9 +161,6 @@ Scan for records in the datastore. Returns `[]` if the table is empty. Returns e
 |config | Object | Each of its properties defines your get operation |
 |config.table | String | The datastore table name |
 |config.params| Object | Query to filter on |
-|config.paginate| Object | Each of its properties further defines the characteristics for pagination |
-|config.paginate.count| Integer | Number of items per page |
-|config.paginate.page| Integer | Page number of the set you wish for the datastore to return |
 
 **Example**
 
@@ -174,40 +171,10 @@ const datastore = new DynamoDB();
 // successful scan operation
 return datastore.scan({
     table: 'animalNoises',
-    params: {},
-    paginate: {
-        page: 2,
-        count: 2
-    }
+    params: {}
 }).then((data) => {
-    console.log(data); // [{ id: 2, sound: 'meow' }, { id: 3, sound: 'woof' }]
+    console.log(data);
 });
-
-// if animalNoises table only has 10 entries
-return datastore.scan({
-    table: 'animalNoises',
-    params: {},
-    paginate: {
-        page: 3,
-        count: 5
-    }
-}).then((data) => {
-    console.log(data); // []
-});
-
-// scan operation on a non-existing entry
-return datastore.scan({
-    table: 'unicorns',
-    params: {},
-    paginate: {
-        page: 2,
-        count: 2
-    }
-}).then((data) => {
-        // do stuff
-    }, (err) {
-        console.error(err); // [Error: Invalid table name "unicorns"
-    });
 ```
 
 
