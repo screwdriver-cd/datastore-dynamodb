@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "clone": "^1.0.2",
-    "screwdriver-data-schema": "^12.0.0",
+    "screwdriver-data-schema": "^13.0.0",
     "screwdriver-datastore-base": "^2.0.0",
     "screwdriver-dynamic-dynamodb": "^3.0.0"
   }
