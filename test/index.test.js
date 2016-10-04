@@ -31,7 +31,8 @@ describe('index test', () => {
             Items: []
         };
         filterMock = {
-            equals: sinon.stub()
+            equals: sinon.stub(),
+            in: sinon.stub()
         };
         scanChainMock = {
             ascending: sinon.stub(),
@@ -587,6 +588,33 @@ describe('index test', () => {
                 assert.calledOnce(scanChainMock.ascending);
                 assert.calledWith(scanChainMock.filter, 'stuff');
                 assert.calledWith(filterMock.equals, '1234');
+            });
+        });
+
+        it('query with OR', () => {
+            const testFilterParams = {
+                table: 'pipelines',
+                params: {
+                    stuff: '1234',
+                    name: ['bar', 'baz']
+                },
+                paginate: {
+                    count: 2,
+                    page: 2
+                }
+            };
+
+            scanChainMock.descending.returns(scanChainMock);
+            scanChainMock.exec.yieldsAsync(null, responseMock);
+            scanChainMock.filter.returns(filterMock);
+
+            return datastore._scan(testFilterParams).then((data) => {
+                assert.isOk(data);
+                assert.calledWith(clientMock.scan);
+                assert.calledWith(scanChainMock.filter, 'stuff');
+                assert.calledWith(filterMock.equals, '1234');
+                assert.calledWith(scanChainMock.filter, 'name');
+                assert.calledWith(filterMock.in, ['bar', 'baz']);
             });
         });
 
