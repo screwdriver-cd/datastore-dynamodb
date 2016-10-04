@@ -2,9 +2,44 @@
 const Datastore = require('screwdriver-datastore-base');
 const clone = require('clone');
 const schemas = require('screwdriver-data-schema');
-const Bobby = require('screwdriver-dynamic-dynamodb');
+const dynogels = require('dynogels');
 const DEFAULT_REGION = 'us-west-2';
-const MODELS = Object.keys(schemas.models);
+const MODELS = schemas.models;
+const MODEL_NAMES = Object.keys(MODELS);
+
+/**
+ * Generate a Dynogel model for a specified model
+ * @method defineTable
+ * @param  {String}    modelName Name of the model
+ * @param  {String}    [prefix]  Prefix of the table names
+ * @return {DynogelModel}        Dynogel to be able to manipulate the AWS table
+ */
+function defineTable(modelName, prefix) {
+    const schema = MODELS[modelName];
+    const tableName = `${prefix || ''}${schema.tableName}`;
+    const indexes = (schema.indexes || []).map((key) => ({
+        hashKey: key,
+        name: `${key}Index`,
+        type: 'global'
+    }));
+
+    const vogelsObject = {
+        hashKey: 'id',
+        schema: schema.base,
+        tableName,
+        indexes
+    };
+
+    if (Array.isArray(schema.rangeKeys)) {
+        schema.rangeKeys.forEach((rangeKey, indexNumber) => {
+            if (rangeKey) {
+                indexes[indexNumber].rangeKey = rangeKey;
+            }
+        });
+    }
+
+    return dynogels.define(modelName, vogelsObject);
+}
 
 class Dynamodb extends Datastore {
     /**
@@ -31,13 +66,13 @@ class Dynamodb extends Datastore {
             this.prefix = config.prefix;
         }
 
-        const bobby = new Bobby(awsConfig);
+        dynogels.AWS.config.update(awsConfig);
 
         this.clients = {};
         this.tableModels = {};
 
-        MODELS.forEach((modelName) => {
-            const table = bobby.defineTable(modelName, this.prefix);
+        MODEL_NAMES.forEach((modelName) => {
+            const table = defineTable(modelName, this.prefix);
             const model = schemas.models[modelName];
 
             this.clients[model.tableName] = table;
