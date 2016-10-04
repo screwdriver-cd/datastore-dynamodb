@@ -15,8 +15,7 @@ describe('index test', () => {
     let scanChainMock;
     let queryChainMock;
     let filterMock;
-    let bobbyMock;
-    let BobbyMockFactory;
+    let dynogelsMock;
 
     before(() => {
         mockery.enable({
@@ -55,7 +54,8 @@ describe('index test', () => {
             models: {
                 pipeline: {
                     base: sinon.stub(),
-                    indexes: ['foo'],
+                    indexes: ['foo', 'ban'],
+                    rangeKeys: [null, 'otherColumn'],
                     tableName: 'pipelines'
                 },
                 job: {
@@ -81,14 +81,18 @@ describe('index test', () => {
                 }
             }
         };
-        mockery.registerMock('screwdriver-data-schema', dataSchemaMock);
-
-        bobbyMock = {
-            defineTable: sinon.stub().returns(clientMock)
+        dynogelsMock = {
+            AWS: {
+                config: {
+                    update: sinon.stub()
+                }
+            },
+            define: sinon.stub(),
+            defineTable: sinon.stub()
         };
-        BobbyMockFactory = sinon.stub();
-        BobbyMockFactory.prototype.defineTable = bobbyMock.defineTable;
-        mockery.registerMock('screwdriver-dynamic-dynamodb', BobbyMockFactory);
+        dynogelsMock.define.returns(clientMock);
+        mockery.registerMock('dynogels', dynogelsMock);
+        mockery.registerMock('screwdriver-data-schema', dataSchemaMock);
 
         /* eslint-disable global-require */
         Datastore = require('../index');
@@ -111,16 +115,16 @@ describe('index test', () => {
         });
 
         it('constructs with the default region', () => {
-            assert.calledWith(BobbyMockFactory, {
+            assert.calledWith(dynogelsMock.AWS.config.update, {
                 region: 'us-west-2'
             });
         });
 
         it('constructs the clients', () => {
-            assert.calledWith(bobbyMock.defineTable, 'build');
-            assert.calledWith(bobbyMock.defineTable, 'job');
-            assert.calledWith(bobbyMock.defineTable, 'pipeline');
-            assert.calledWith(bobbyMock.defineTable, 'user');
+            assert.calledWith(dynogelsMock.define, 'build');
+            assert.calledWith(dynogelsMock.define, 'job');
+            assert.calledWith(dynogelsMock.define, 'pipeline');
+            assert.calledWith(dynogelsMock.define, 'user');
         });
 
         it('constructs the client with a defined region', () => {
@@ -128,7 +132,7 @@ describe('index test', () => {
                 region: 'my-region'
             });
 
-            assert.calledWith(BobbyMockFactory, {
+            assert.calledWith(dynogelsMock.AWS.config.update, {
                 region: 'my-region'
             });
         });
@@ -139,7 +143,7 @@ describe('index test', () => {
                 secretAccessKey: 'bar'
             });
 
-            assert.calledWith(BobbyMockFactory, {
+            assert.calledWith(dynogelsMock.AWS.config.update, {
                 region: 'us-west-2',
                 accessKeyId: 'foo',
                 secretAccessKey: 'bar'
