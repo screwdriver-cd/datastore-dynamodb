@@ -250,7 +250,13 @@ class Dynamodb extends Datastore {
                 });
 
                 Object.keys(filterParams).forEach((param) => {
-                    scanner.filter(`${param}`).equals(filterParams[param]);
+                    const value = filterParams[param];
+
+                    if (Array.isArray(value)) {
+                        scanner.filter(param).in(value);
+                    } else {
+                        scanner.filter(param).equals(value);
+                    }
                 });
 
                 scanner = (config.sort === 'ascending')
