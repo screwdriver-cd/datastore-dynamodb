@@ -81,6 +81,23 @@ class Dynamodb extends Datastore {
     }
 
     /**
+     * Get tables in order
+     * @method setup
+     * @return Promise
+     */
+    setup() {
+        return new Promise((resolve, reject) => {
+            dynogels.createTables((err) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve();
+            });
+        });
+    }
+
+    /**
      * Obtain an item from the DynamoDB table by primary key
      * @param  {Object}   config             Configuration object
      * @param  {String}   config.table       Name of the table to interact with
