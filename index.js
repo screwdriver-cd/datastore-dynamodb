@@ -1,4 +1,5 @@
 'use strict';
+
 const Datastore = require('screwdriver-datastore-base');
 const clone = require('clone');
 const schemas = require('screwdriver-data-schema');
@@ -17,7 +18,7 @@ const MODEL_NAMES = Object.keys(MODELS);
 function defineTable(modelName, prefix) {
     const schema = MODELS[modelName];
     const tableName = `${prefix || ''}${schema.tableName}`;
-    const indexes = (schema.indexes || []).map((key) => ({
+    const indexes = (schema.indexes || []).map(key => ({
         hashKey: key,
         name: `${key}Index`,
         type: 'global'
@@ -255,7 +256,7 @@ class Dynamodb extends Datastore {
             let scanner = client.scan();
 
             if (filterParams && Object.keys(filterParams).length > 0) {
-                model.indexes.some(param => {
+                model.indexes.some((param) => {
                     if (filterParams[param]) {
                         scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
                         delete filterParams[param];
@@ -285,7 +286,7 @@ class Dynamodb extends Datastore {
                     return reject(err);
                 }
 
-                const response = data.Items.map((item) => item.toJSON());
+                const response = data.Items.map(item => item.toJSON());
 
                 return resolve(response);
             });

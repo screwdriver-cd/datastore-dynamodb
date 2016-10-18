@@ -39,8 +39,8 @@
   },
   "dependencies": {
     "clone": "^2.0.0",
-    "screwdriver-data-schema": "^13.0.0",
-    "screwdriver-datastore-base": "^2.0.0",
-    "dynogels": "^6.0.1"
+    "dynogels": "^6.0.1",
+    "screwdriver-data-schema": "^14.0.7",
+    "screwdriver-datastore-base": "^2.0.0"
   }
 }
