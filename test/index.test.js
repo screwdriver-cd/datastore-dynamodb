@@ -1,5 +1,7 @@
 /* eslint-disable no-underscore-dangle */
+
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -182,7 +184,7 @@ describe('index test', () => {
                 params: {
                     id: 'someId'
                 }
-            }).then((data) => assert.isNull(data));
+            }).then(data => assert.isNull(data));
         });
 
         it('fails when given an unknown table name', () =>
@@ -489,7 +491,7 @@ describe('index test', () => {
             scanChainMock.descending.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
-            for (; count > 0; count--) {
+            for (; count > 0; count -= 1) {
                 responseMock.Items[count - 1] = dynamoItem;
             }
 
@@ -516,7 +518,7 @@ describe('index test', () => {
                 }
             };
 
-            for (count = 4; count > 0; count--) {
+            for (count = 4; count > 0; count -= 1) {
                 responseMock.Items[count - 1] = dynamoItem;
             }
 
@@ -547,7 +549,7 @@ describe('index test', () => {
                 }
             };
 
-            for (count = 4; count > 0; count--) {
+            for (count = 4; count > 0; count -= 1) {
                 responseMock.Items[count - 1] = dynamoItem;
             }
 
