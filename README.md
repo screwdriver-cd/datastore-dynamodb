@@ -194,7 +194,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-datastore-dynamodb.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/datastore-dynamodb.svg
 [issues-url]: https://github.com/screwdriver-cd/datastore-dynamodb/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/8e6fcf447ebd13f5cfbdb570e382ad8c410c2ec0/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/8e6fcf447ebd13f5cfbdb570e382ad8c410c2ec0
+[status-image]: https://cd.screwdriver.cd/pipelines/942d23bea5e4086aeb103c0a8a09b87aba0183ee/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/942d23bea5e4086aeb103c0a8a09b87aba0183ee
 [daviddm-image]: https://david-dm.org/screwdriver-cd/datastore-dynamodb.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/datastore-dynamodb
