@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-datastore-dynamodb",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Screwdriver interface with dynamodb",
   "main": "index.js",
   "scripts": {
@@ -40,7 +40,7 @@
   "dependencies": {
     "clone": "^2.0.0",
     "dynogels": "^6.0.1",
-    "screwdriver-data-schema": "^14.0.7",
-    "screwdriver-datastore-base": "^2.0.0"
+    "screwdriver-data-schema": "^15.0.3",
+    "screwdriver-datastore-base": "^2.2.0"
   }
 }
