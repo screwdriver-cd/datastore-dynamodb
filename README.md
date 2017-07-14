@@ -3,6 +3,10 @@
 
 > interface with dynamodb
 
+## Deprecated
+
+**Please note that this code is no longer used by the screwdriver.cd team and has not been maintained in a while. You are welcome to use and/or contribute to it at your own risk.**
+
 ## Usage
 
 ```bash
