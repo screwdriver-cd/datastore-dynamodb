@@ -72,7 +72,7 @@ class Dynamodb extends Datastore {
         this.clients = {};
         this.tableModels = {};
 
-        MODEL_NAMES.forEach((modelName) => {
+        MODEL_NAMES.forEach(modelName => {
             const table = defineTable(modelName, this.prefix);
             const model = schemas.models[modelName];
 
@@ -88,7 +88,7 @@ class Dynamodb extends Datastore {
      */
     setup() {
         return new Promise((resolve, reject) => {
-            dynogels.createTables((err) => {
+            dynogels.createTables(err => {
                 if (err) {
                     return reject(err);
                 }
@@ -120,7 +120,7 @@ class Dynamodb extends Datastore {
                 if (err) {
                     return reject(err);
                 }
-                const result = (data) ? data.toJSON() : null;
+                const result = data ? data.toJSON() : null;
 
                 return resolve(result);
             });
@@ -178,7 +178,7 @@ class Dynamodb extends Datastore {
                 return reject(err);
             }
 
-            return client.destroy(config.params.id, (err) => {
+            return client.destroy(config.params.id, err => {
                 if (err) {
                     return reject(err);
                 }
@@ -256,7 +256,7 @@ class Dynamodb extends Datastore {
             let scanner = client.scan();
 
             if (filterParams && Object.keys(filterParams).length > 0) {
-                model.indexes.some((param) => {
+                model.indexes.some(param => {
                     if (filterParams[param]) {
                         scanner = client.query(filterParams[param]).usingIndex(`${param}Index`);
                         delete filterParams[param];
@@ -267,7 +267,7 @@ class Dynamodb extends Datastore {
                     return false;
                 });
 
-                Object.keys(filterParams).forEach((param) => {
+                Object.keys(filterParams).forEach(param => {
                     const value = filterParams[param];
 
                     if (Array.isArray(value)) {
@@ -277,8 +277,7 @@ class Dynamodb extends Datastore {
                     }
                 });
 
-                scanner = (config.sort === 'ascending')
-                    ? scanner.ascending() : scanner.descending();
+                scanner = config.sort === 'ascending' ? scanner.ascending() : scanner.descending();
             }
 
             return scanner.exec((err, data) => {

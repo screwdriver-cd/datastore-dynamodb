@@ -170,7 +170,7 @@ describe('index test', () => {
             clientMock.get.yieldsAsync(null, responseMock);
             responseMock.toJSON.returns(testData);
 
-            return datastore._get(testParams).then((data) => {
+            return datastore._get(testParams).then(data => {
                 assert.deepEqual(data, testData);
                 assert.calledWith(clientMock.get, testParams.params.id);
             });
@@ -179,44 +179,51 @@ describe('index test', () => {
         it('gracefully understands that no one is returned when it does not exist', () => {
             clientMock.get.yieldsAsync();
 
-            return datastore._get({
-                table: 'pipelines',
-                params: {
-                    id: 'someId'
-                }
-            }).then(data => assert.isNull(data));
+            return datastore
+                ._get({
+                    table: 'pipelines',
+                    params: {
+                        id: 'someId'
+                    }
+                })
+                .then(data => assert.isNull(data));
         });
 
         it('fails when given an unknown table name', () =>
-            datastore._get({
-                table: 'tableUnicorn',
-                params: {
-                    id: 'doesNotMatter'
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, /Invalid table name/);
-            })
-        );
+            datastore
+                ._get({
+                    table: 'tableUnicorn',
+                    params: {
+                        id: 'doesNotMatter'
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, /Invalid table name/);
+                }));
 
         it('fails when it encounters an error', () => {
             const testError = new Error('errorCommunicatingToApi');
 
             clientMock.get.yieldsAsync(testError);
 
-            return datastore._get({
-                table: 'pipelines',
-                params: {
-                    id: 'someId'
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.equal(err.message, testError.message);
-            });
+            return datastore
+                ._get({
+                    table: 'pipelines',
+                    params: {
+                        id: 'someId'
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.equal(err.message, testError.message);
+                });
         });
     });
 
@@ -234,19 +241,21 @@ describe('index test', () => {
             clientResponse.toJSON.returns(expectedResult);
             clientMock.create.yieldsAsync(null, clientResponse);
 
-            return datastore._save({
-                table: 'pipelines',
-                params: {
-                    id: 'someIdToPutHere',
-                    data: { key: 'value' }
-                }
-            }).then((data) => {
-                assert.deepEqual(data, expectedResult);
-                assert.calledWith(clientMock.create, {
-                    id: 'someIdToPutHere',
-                    key: 'value'
+            return datastore
+                ._save({
+                    table: 'pipelines',
+                    params: {
+                        id: 'someIdToPutHere',
+                        data: { key: 'value' }
+                    }
+                })
+                .then(data => {
+                    assert.deepEqual(data, expectedResult);
+                    assert.calledWith(clientMock.create, {
+                        id: 'someIdToPutHere',
+                        key: 'value'
+                    });
                 });
-            });
         });
 
         it('fails when it encounters an error', () => {
@@ -254,34 +263,41 @@ describe('index test', () => {
 
             clientMock.create.yieldsAsync(testError);
 
-            return datastore._save({
-                table: 'pipelines',
-                params: {
-                    id: 'doesNotMatter',
-                    data: {}
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }, (err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.equal(err.message, testError.message);
-            });
+            return datastore
+                ._save({
+                    table: 'pipelines',
+                    params: {
+                        id: 'doesNotMatter',
+                        data: {}
+                    }
+                })
+                .then(
+                    () => {
+                        throw new Error('Oops');
+                    },
+                    err => {
+                        assert.isOk(err, 'Error should be returned');
+                        assert.equal(err.message, testError.message);
+                    }
+                );
         });
 
         it('fails when given an unknown table name', () =>
-            datastore._save({
-                table: 'doesNotExist',
-                params: {
-                    id: 'doesNotMatter',
-                    data: {}
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, /Invalid table name/);
-            })
-        );
+            datastore
+                ._save({
+                    table: 'doesNotExist',
+                    params: {
+                        id: 'doesNotMatter',
+                        data: {}
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, /Invalid table name/);
+                }));
     });
 
     describe('remove', () => {
@@ -295,42 +311,47 @@ describe('index test', () => {
 
             clientMock.destroy.yieldsAsync(null);
 
-            return datastore._remove(testParams).then((data) => {
+            return datastore._remove(testParams).then(data => {
                 assert.isNull(data);
                 assert.calledWith(clientMock.destroy, testParams.params.id);
             });
         });
 
         it('fails when given an unknown table name', () =>
-            datastore._remove({
-                table: 'tableUnicorn',
-                params: {
-                    id: 'doesNotMatter'
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, /Invalid table name/);
-            })
-        );
+            datastore
+                ._remove({
+                    table: 'tableUnicorn',
+                    params: {
+                        id: 'doesNotMatter'
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, /Invalid table name/);
+                }));
 
         it('fails when it encounters an error', () => {
             const testError = new Error('errorCommunicatingToApi');
 
             clientMock.destroy.yieldsAsync(testError);
 
-            return datastore._remove({
-                table: 'pipelines',
-                params: {
-                    id: 'someId'
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, testError.message);
-            });
+            return datastore
+                ._remove({
+                    table: 'pipelines',
+                    params: {
+                        id: 'someId'
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, testError.message);
+                });
         });
     });
 
@@ -349,19 +370,21 @@ describe('index test', () => {
             clientMock.update.yieldsAsync(null, clientReponse);
             clientReponse.toJSON.returns(expectedResult);
 
-            return datastore._update({
-                table: 'pipelines',
-                params: {
-                    id,
-                    data: { targetKey: 'updatedValue' }
-                }
-            }).then((data) => {
-                assert.deepEqual(data, expectedResult);
-                assert.calledWith(clientMock.update, {
-                    id,
-                    targetKey: 'updatedValue'
+            return datastore
+                ._update({
+                    table: 'pipelines',
+                    params: {
+                        id,
+                        data: { targetKey: 'updatedValue' }
+                    }
+                })
+                .then(data => {
+                    assert.deepEqual(data, expectedResult);
+                    assert.calledWith(clientMock.update, {
+                        id,
+                        targetKey: 'updatedValue'
+                    });
                 });
-            });
         });
 
         /*
@@ -382,59 +405,70 @@ describe('index test', () => {
             testError.statusCode = 400;
             clientMock.update.yieldsAsync(testError);
 
-            return datastore._update({
-                table: 'pipelines',
-                params: {
-                    id,
-                    data: {
-                        otherKey: 'value'
+            return datastore
+                ._update({
+                    table: 'pipelines',
+                    params: {
+                        id,
+                        data: {
+                            otherKey: 'value'
+                        }
                     }
-                }
-            }).then((data) => {
-                assert.isNull(data);
-                assert.calledWith(clientMock.update, {
-                    id,
-                    otherKey: 'value'
-                }, {
-                    expected: {
-                        id
-                    }
+                })
+                .then(data => {
+                    assert.isNull(data);
+                    assert.calledWith(
+                        clientMock.update,
+                        {
+                            id,
+                            otherKey: 'value'
+                        },
+                        {
+                            expected: {
+                                id
+                            }
+                        }
+                    );
                 });
-            });
         });
 
         it('fails when given an unknown table name', () =>
-            datastore._update({
-                table: 'doesNotExist',
-                params: {
-                    id: 'doesNotMatter',
-                    data: {}
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, /Invalid table name/);
-            })
-        );
+            datastore
+                ._update({
+                    table: 'doesNotExist',
+                    params: {
+                        id: 'doesNotMatter',
+                        data: {}
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, /Invalid table name/);
+                }));
 
         it('fails when it encounters an error', () => {
             const testError = new Error('testError');
 
             clientMock.update.yieldsAsync(testError);
 
-            return datastore._update({
-                table: 'pipelines',
-                params: {
-                    id: 'doesNotMatter',
-                    data: {}
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.equal(err.message, testError.message);
-            });
+            return datastore
+                ._update({
+                    table: 'pipelines',
+                    params: {
+                        id: 'doesNotMatter',
+                        data: {}
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.equal(err.message, testError.message);
+                });
         });
 
         it('fails when it encounters a synchronous error', () => {
@@ -442,18 +476,21 @@ describe('index test', () => {
 
             clientMock.update.throws(testError);
 
-            return datastore._update({
-                table: 'pipelines',
-                params: {
-                    id: 'doNotCare',
-                    data: {}
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.equal(err.message, testError.message);
-            });
+            return datastore
+                ._update({
+                    table: 'pipelines',
+                    params: {
+                        id: 'doNotCare',
+                        data: {}
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.equal(err.message, testError.message);
+                });
         });
     });
 
@@ -500,7 +537,7 @@ describe('index test', () => {
                 key: 'value'
             });
 
-            return datastore._scan(testParams).then((data) => {
+            return datastore._scan(testParams).then(data => {
                 assert.deepEqual(data, testData);
                 assert.calledWith(clientMock.scan);
             });
@@ -529,7 +566,7 @@ describe('index test', () => {
                 key: 'value'
             });
 
-            return datastore._scan(testFilterParams).then((data) => {
+            return datastore._scan(testFilterParams).then(data => {
                 assert.isOk(data);
                 assert.calledWith(clientMock.scan);
                 assert.notCalled(clientMock.query);
@@ -560,7 +597,7 @@ describe('index test', () => {
                 key: 'value'
             });
 
-            return datastore._scan(testFilterParams).then((data) => {
+            return datastore._scan(testFilterParams).then(data => {
                 assert.isOk(data);
                 assert.calledWith(clientMock.scan);
                 assert.calledWith(clientMock.query, 'bar');
@@ -586,7 +623,7 @@ describe('index test', () => {
             scanChainMock.exec.yieldsAsync(null, responseMock);
             scanChainMock.filter.returns(filterMock);
 
-            return datastore._scan(testFilterParams).then((data) => {
+            return datastore._scan(testFilterParams).then(data => {
                 assert.isOk(data);
                 assert.calledWith(clientMock.scan);
                 assert.calledWith(clientMock.query, 'bar');
@@ -614,7 +651,7 @@ describe('index test', () => {
             scanChainMock.exec.yieldsAsync(null, responseMock);
             scanChainMock.filter.returns(filterMock);
 
-            return datastore._scan(testFilterParams).then((data) => {
+            return datastore._scan(testFilterParams).then(data => {
                 assert.isOk(data);
                 assert.calledWith(clientMock.scan);
                 assert.calledWith(scanChainMock.filter, 'stuff');
@@ -659,7 +696,7 @@ describe('index test', () => {
             clientMock.scan.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
-            return datastore._scan(testFilterParams).then((data) => {
+            return datastore._scan(testFilterParams).then(data => {
                 assert.isOk(data);
                 assert.notCalled(scanChainMock.ascending);
             });
@@ -669,7 +706,7 @@ describe('index test', () => {
             scanChainMock.descending.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(null, responseMock);
 
-            return datastore._scan(testParams).then((data) => {
+            return datastore._scan(testParams).then(data => {
                 assert.deepEqual(data, []);
                 assert.calledWith(clientMock.scan);
             });
@@ -678,19 +715,22 @@ describe('index test', () => {
         it('fails when given an unknown table name', () => {
             scanChainMock.exec.yieldsAsync(new Error('cannot find entries in table'));
 
-            return datastore._scan({
-                table: 'tableUnicorn',
-                params: {},
-                paginate: {
-                    count: 2,
-                    page: 2
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, /Invalid table name/);
-            });
+            return datastore
+                ._scan({
+                    table: 'tableUnicorn',
+                    params: {},
+                    paginate: {
+                        count: 2,
+                        page: 2
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, /Invalid table name/);
+                });
         });
 
         it('fails when it encounters an error', () => {
@@ -699,19 +739,22 @@ describe('index test', () => {
             scanChainMock.descending.returns(scanChainMock);
             scanChainMock.exec.yieldsAsync(testError);
 
-            return datastore._scan({
-                table: 'pipelines',
-                params: {},
-                paginate: {
-                    count: 2,
-                    page: 2
-                }
-            }).then(() => {
-                throw new Error('Oops');
-            }).catch((err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.match(err.message, testError.message);
-            });
+            return datastore
+                ._scan({
+                    table: 'pipelines',
+                    params: {},
+                    paginate: {
+                        count: 2,
+                        page: 2
+                    }
+                })
+                .then(() => {
+                    throw new Error('Oops');
+                })
+                .catch(err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.match(err.message, testError.message);
+                });
         });
     });
 });
