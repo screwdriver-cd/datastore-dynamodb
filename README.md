@@ -1,5 +1,5 @@
 # Screwdriver Datastore Dynamodb
-[![Version][npm-image]][npm-url] ![Downloads][downloads-image] [![Build Status][status-image]][status-url] [![Open Issues][issues-image]][issues-url] [![Dependency Status][daviddm-image]][daviddm-url] ![License][license-image]
+[![Version][npm-image]][npm-url] ![Downloads][downloads-image] [![Open Issues][issues-image]][issues-url] ![License][license-image]
 
 > interface with dynamodb
 
@@ -198,7 +198,3 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-datastore-dynamodb.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/datastore-dynamodb.svg
 [issues-url]: https://github.com/screwdriver-cd/datastore-dynamodb/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/942d23bea5e4086aeb103c0a8a09b87aba0183ee/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/942d23bea5e4086aeb103c0a8a09b87aba0183ee
-[daviddm-image]: https://david-dm.org/screwdriver-cd/datastore-dynamodb.svg?theme=shields.io
-[daviddm-url]: https://david-dm.org/screwdriver-cd/datastore-dynamodb
